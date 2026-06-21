@@ -41,8 +41,38 @@ SYSTEM_PROMPT = (
     "You have access to the user's saved notes below; use them when relevant."
 )
 
-_POLL_TIMEOUT = 30   # long-poll seconds (Telegram max is 50)
-_RETRY_DELAY = 5     # seconds to wait after a network error before retrying
+_POLL_TIMEOUT = 30    # long-poll seconds (Telegram max is 50)
+_BACKOFF_BASE = 1     # initial retry delay in seconds after a getUpdates error
+_BACKOFF_CAP = 60     # maximum retry delay in seconds
+
+
+def _next_backoff(prev: float, base: float = _BACKOFF_BASE, cap: float = _BACKOFF_CAP) -> float:
+    """Return the next exponential backoff delay, capped at *cap* seconds.
+
+    Pass ``prev=0`` to get the first (base) delay.
+    ``prev < base`` also returns ``base`` so the sequence is always base, 2*base, ...
+    """
+    if prev < base:
+        return base
+    return min(prev * 2, cap)
+
+
+def should_handle(update: dict, configured_chat_id: str) -> bool:
+    """Return True iff *update* should be dispatched to the assistant.
+
+    Conditions (both must hold):
+    - The message (or edited_message) chat id matches *configured_chat_id* exactly.
+    - The message has non-empty text.
+
+    This is the authorisation line: updates from any other chat id return False
+    and are silently discarded.
+    """
+    msg = update.get("message") or update.get("edited_message") or {}
+    incoming_chat = str(msg.get("chat", {}).get("id", "")).strip()
+    if incoming_chat != configured_chat_id:
+        return False
+    text = msg.get("text", "")
+    return bool(text)
 
 
 def _context_block(memory_path: str) -> str:
@@ -52,8 +82,15 @@ def _context_block(memory_path: str) -> str:
     return "\n".join(f"- [{e.kind}] {e.text}" for e in notes)
 
 
-def _get_updates(token: str, offset: int) -> list[dict]:
-    """Call getUpdates with long-polling. Returns a list of update dicts."""
+def _get_updates(token: str, offset: int) -> list[dict] | None:
+    """Call getUpdates with long-polling.
+
+    Returns a list of update dicts on success (may be empty for a normal
+    long-poll timeout), or ``None`` on an actual network/API error.
+
+    The distinction matters for backoff: an empty list is a success;
+    ``None`` is an error that should increment the failure counter.
+    """
     url = (
         f"https://api.telegram.org/bot{token}/getUpdates"
         f"?timeout={_POLL_TIMEOUT}&offset={offset}"
@@ -63,10 +100,10 @@ def _get_updates(token: str, offset: int) -> list[dict]:
             data = json.loads(resp.read().decode("utf-8"))
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
         print(f"[telegram_bot] getUpdates error: {exc}", file=sys.stderr)
-        return []
+        return None
     if not (isinstance(data, dict) and data.get("ok")):
         print(f"[telegram_bot] getUpdates API error: {data}", file=sys.stderr)
-        return []
+        return None
     return data.get("result", [])
 
 
@@ -128,32 +165,37 @@ def main() -> None:
 
     print(f"[telegram_bot] listening (chat_id={chat_id}) …", flush=True)
     offset = 0
+    backoff_delay: float = 0.0  # 0 means "no failure yet; don't sleep"
+
     while True:
         try:
             updates = _get_updates(token, offset)
         except Exception as exc:  # unexpected — log and retry
             print(f"[telegram_bot] unexpected error in poll: {exc}", file=sys.stderr)
-            time.sleep(_RETRY_DELAY)
+            updates = None
+
+        if updates is None:
+            # Network error or API error: apply exponential backoff
+            backoff_delay = _next_backoff(backoff_delay)
+            time.sleep(backoff_delay)
             continue
 
+        # Successful poll (even an empty one) — reset the backoff counter
+        backoff_delay = 0.0
+
         if not updates:
-            # network hiccup or genuine timeout — brief pause to avoid spin
+            # Normal long-poll timeout: no updates, not a failure
             time.sleep(1)
             continue
 
         for upd in updates:
             offset = upd.get("update_id", offset) + 1
+
+            if not should_handle(upd, chat_id):
+                continue
+
             msg = upd.get("message") or upd.get("edited_message") or {}
-            incoming_chat = str(msg.get("chat", {}).get("id", "")).strip()
-
-            # SECURITY: ignore any message not from the configured chat id
-            if incoming_chat != chat_id:
-                continue
-
             text = msg.get("text", "")
-            if not text:
-                continue
-
             reply = _handle(text, cfg)
             if not notify.send(reply, cfg):
                 print(

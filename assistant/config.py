@@ -19,10 +19,14 @@ DEFAULT_CONFIG: dict = {
         "include_nvr": True,
         "nvr_url": "http://localhost:5000",
         "nvr_hours": 24,
+        "nvr_api_key": "",          # optional: set or export FRIGATE_API_KEY
     },
     "notify": {
         "telegram_bot_token": "",
         "telegram_chat_id": "",
+    },
+    "alerts": {
+        "cooldown_seconds": 120,    # suppress repeat alerts for same camera within this window
     },
 }
 
@@ -41,12 +45,12 @@ def load_config(path: str | None = None) -> dict:
         return cfg
     if not isinstance(user, dict):
         return cfg
-    # Only "sitrep" is deep-merged; every other key (e.g. "notify") replaces wholesale.
+    # "sitrep" and "alerts" are deep-merged; every other key replaces wholesale.
     for key, value in user.items():
-        if key == "sitrep":
+        if key in ("sitrep", "alerts"):
             if isinstance(value, dict):
-                cfg["sitrep"].update(value)
-            # ignore a non-dict sitrep override; keep the defaults
+                cfg[key].update(value)
+            # ignore a non-dict override; keep the defaults
         else:
             cfg[key] = value
     return cfg

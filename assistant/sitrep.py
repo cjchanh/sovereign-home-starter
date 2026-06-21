@@ -11,15 +11,13 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import json
 import shutil
 import subprocess
 import time
-import urllib.error
-import urllib.request
 from pathlib import Path
 
 import config as cfg_mod
+import frigate as frigate_mod
 import llm
 import memory
 
@@ -46,15 +44,13 @@ def _system_health() -> str:
     return "\n".join(lines) if lines else "(system health unavailable)"
 
 
-def _nvr_events(nvr_url: str, hours: int) -> str:
+def _nvr_events(nvr_url: str, hours: int, api_key: str = "") -> str:
     # Actually bound to the window — `after` is a unix timestamp, so the brief's
     # "last Nh" matches the data instead of just "the last 50 events, whenever".
     after = time.time() - hours * 3600
     url = f"{nvr_url.rstrip('/')}/api/events?limit=100&after={after}"
-    try:
-        with urllib.request.urlopen(url, timeout=10) as resp:
-            events = json.loads(resp.read().decode("utf-8"))
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
+    events = frigate_mod.fetch_json(url, api_key, timeout=10)
+    if events is None:
         return "(NVR not reachable — skipping camera summary)"
     if not events:
         return f"no camera events in the last {hours}h."
@@ -72,13 +68,14 @@ def _nvr_events(nvr_url: str, hours: int) -> str:
 def build_sitrep(cfg: dict) -> str:
     parts: list[str] = []
     s = cfg.get("sitrep", {})
+    api_key = frigate_mod.get_api_key(cfg)
     if s.get("include_system", True):
         parts.append("## System\n" + _system_health())
     if s.get("include_nvr", True):
         hours = s.get("nvr_hours", 24)
         parts.append(
             f"## Cameras (last {hours}h)\n"
-            + _nvr_events(s.get("nvr_url", "http://localhost:5000"), hours)
+            + _nvr_events(s.get("nvr_url", "http://localhost:5000"), hours, api_key)
         )
     todos = memory.load(cfg["memory_path"], kind="todo")
     if todos:

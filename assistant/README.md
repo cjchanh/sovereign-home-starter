@@ -52,6 +52,12 @@ Supported commands (same as the chat REPL):
 - `/todo <text>` — save a todo
 - anything else → answered by the local model
 
+**Retry backoff:** if the Telegram `getUpdates` call fails (network down, API error),
+the bot retries with exponential backoff starting at 1 s, doubling on each consecutive
+failure up to a cap of 60 s. A successful empty long-poll (normal Telegram timeout with
+no new messages) is not counted as a failure — the backoff counter resets after any
+successful poll.
+
 ### Run as a systemd service (optional)
 ```bash
 cp telegram-bot.service.example ~/.config/systemd/user/telegram-bot.service
@@ -86,12 +92,51 @@ Copy `config.example.json` to `config.json` (setup.sh does this) and edit the mo
 memory path, and NVR URL. If `config.json` is missing, sensible defaults are used so
 it still runs.
 
+### New config knobs
+
+**`sitrep.nvr_api_key`** (default `""`) — optional Bearer token for Frigate when it
+sits behind a reverse proxy with auth enabled. Can also be set via the
+`FRIGATE_API_KEY` environment variable (env wins over the config file). When unset,
+all Frigate requests are sent without an `Authorization` header — identical to the
+previous behaviour.
+
+```json
+"sitrep": {
+  "nvr_url": "http://localhost:5000",
+  "nvr_api_key": ""
+}
+```
+
+Or in the shell:
+```bash
+export FRIGATE_API_KEY=your-token-here
+```
+
+**`alerts.cooldown_seconds`** (default `120`) — minimum gap in seconds between two
+alerts for the **same camera**. If a second person/car event fires on camera A within
+120 s of the first alert on camera A, it is suppressed (not delivered, not retried).
+The high-water mark still advances past the suppressed event so it is not replayed on
+the next cron run.
+
+Alerts on **different** cameras are independent — a burst on "front" does not affect
+"back".
+
+```json
+"alerts": {
+  "cooldown_seconds": 120
+}
+```
+
+Set to `0` to disable cooldown (deliver every event). Set higher (e.g. `300`) to
+reduce noise on busy cameras.
+
 ## Files
 - `assistant.py` — chat loop with memory + commands
 - `telegram_bot.py` — two-way Telegram bot (text your assistant from your phone)
 - `telegram-bot.service.example` — systemd user unit for running the bot
 - `sitrep.py` — assembles the brief (system + cameras + todos); `--notify` pushes it
 - `alert_watcher.py` — Frigate → Telegram person/car alerts, with snapshot photo (cron, one-shot)
+- `frigate.py` — shared Frigate HTTP helper (auth header, fail-soft JSON/bytes fetch)
 - `notify.py` — Telegram sender (zero deps, fail-soft); `send()` for text, `send_photo()` for images
 - `memory.py` — append-only local memory store
 - `llm.py` — minimal Ollama client (zero deps)

@@ -6,10 +6,14 @@
     "include_system": true,
     "include_nvr": true,
     "nvr_url": "http://localhost:5000",
-    "nvr_hours": 24
+    "nvr_hours": 24,
+    "nvr_api_key": ""
   },
   "notify": {
     "telegram_bot_token": "",
     "telegram_chat_id": ""
+  },
+  "alerts": {
+    "cooldown_seconds": 120
   }
 }
