@@ -13,7 +13,11 @@ import sys
 import urllib.error
 import urllib.request
 
-_TELEGRAM_MAX = 4096
+_TELEGRAM_MAX = 4096  # Telegram counts this in UTF-16 code units, not code points
+
+
+def _u16_len(s: str) -> int:
+    return len(s.encode("utf-16-le")) // 2
 
 
 def _creds(cfg: dict | None) -> tuple[str | None, str | None]:
@@ -35,8 +39,12 @@ def send(text: str, cfg: dict | None = None) -> bool:
             file=sys.stderr,
         )
         return False
-    if len(text) > _TELEGRAM_MAX:
-        text = text[: _TELEGRAM_MAX - 20] + "\n…(truncated)"
+    if _u16_len(text) > _TELEGRAM_MAX:
+        marker = "\n…(truncated)"
+        budget = _TELEGRAM_MAX - _u16_len(marker)
+        while text and _u16_len(text) > budget:
+            text = text[:-1]
+        text += marker
     payload = json.dumps(
         {"chat_id": chat, "text": text, "disable_web_page_preview": True}
     ).encode("utf-8")

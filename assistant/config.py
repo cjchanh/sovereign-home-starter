@@ -41,6 +41,7 @@ def load_config(path: str | None = None) -> dict:
         return cfg
     if not isinstance(user, dict):
         return cfg
+    # Only "sitrep" is deep-merged; every other key (e.g. "notify") replaces wholesale.
     for key, value in user.items():
         if key == "sitrep":
             if isinstance(value, dict):

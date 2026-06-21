@@ -1,5 +1,6 @@
 # secrets + real configs (never commit)
 .env
+!.env.example          # must ship — overrides a global .env.* ignore rule
 assistant/config.json
 nvr/config.yml
 

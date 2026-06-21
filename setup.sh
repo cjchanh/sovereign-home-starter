@@ -30,8 +30,8 @@ need ollama    "install from https://ollama.com (for the local assistant model)"
 # 2. seed config files (never overwrite an existing real config) ------------
 seed() {
   if [ ! -f "$1" ]; then
-    echo "  ERROR:   missing template $1"
-    return 1
+    echo "  ERROR:   missing template $1 (skipping — others still seed)"
+    return 0   # non-fatal: never abort seeding the remaining configs under set -e
   fi
   if [ -f "$2" ]; then
     echo "  keep:    $2 (already exists)"

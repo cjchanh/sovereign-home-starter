@@ -62,16 +62,17 @@ cameras:
 # bounded by this machine's CPU / RAM / disk — not an 8-camera hub.
 #
 # --- Reolink example (different RTSP paths than Tapo) -----------------------
-# Uncomment and edit if you're running Reolink instead of / alongside Tapo:
+# Uncomment (strip the leading "# " from each line) and edit for Reolink cameras.
+# The indentation is pre-padded so a plain "# " strip lands at the right YAML level:
 #
-#  back_yard:
-#    ffmpeg:
-#      inputs:
-#        - path: rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.1.51:554/h264Preview_01_sub
-#          roles: [detect]
-#        - path: rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.1.51:554/h264Preview_01_main
-#          roles: [record]
-#    detect: { width: 640, height: 480, fps: 5 }
-#    objects: { track: [person, car] }
-#    record: { enabled: true, motion: { days: 7 } }
-#    snapshots: { enabled: true }
+#   back_yard:
+#     ffmpeg:
+#       inputs:
+#         - path: rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.1.51:554/h264Preview_01_sub
+#           roles: [detect]
+#         - path: rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.1.51:554/h264Preview_01_main
+#           roles: [record]
+#     detect: { width: 640, height: 480, fps: 5 }
+#     objects: { track: [person, car] }
+#     record: { enabled: true, motion: { days: 7 } }
+#     snapshots: { enabled: true }
