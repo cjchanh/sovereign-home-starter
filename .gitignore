@@ -1,0 +1,13 @@
+# secrets + real configs (never commit)
+.env
+assistant/config.json
+nvr/config.yml
+
+# local data
+nvr/storage/
+**/*.jsonl
+.sovereign-home/
+
+# python
+__pycache__/
+*.pyc

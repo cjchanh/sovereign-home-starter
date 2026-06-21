@@ -1,0 +1,23 @@
+services:
+  frigate:
+    container_name: frigate
+    image: ghcr.io/blakeblackshear/frigate:stable
+    restart: unless-stopped
+    shm_size: "256mb"   # increase if you add more cameras (see Frigate docs)
+    # Uncomment for Intel/AMD iGPU hardware acceleration:
+    # devices:
+    #   - /dev/dri/renderD128
+    env_file:
+      - ../.env
+    volumes:
+      - ./config.yml:/config/config.yml:ro
+      - ./storage:/media/frigate
+      - type: tmpfs
+        target: /tmp/cache
+        tmpfs:
+          size: 1000000000
+    ports:
+      - "5000:5000"      # web UI
+      - "8554:8554"      # RTSP restream
+      - "8555:8555/tcp"  # WebRTC
+      - "8555:8555/udp"

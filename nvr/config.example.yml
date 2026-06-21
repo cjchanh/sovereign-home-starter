@@ -1,0 +1,47 @@
+# Frigate config — local AI camera NVR. Person/vehicle detection runs on THIS
+# machine. No cloud, no subscription. Full docs: https://docs.frigate.video
+#
+# Copy this to config.yml (setup.sh does it) and edit the camera IP + RTSP path.
+# The password comes from ../.env (FRIGATE_RTSP_PASSWORD) via {FRIGATE_RTSP_PASSWORD}.
+
+mqtt:
+  enabled: false
+
+detectors:
+  # CPU detector works everywhere. For many cameras add a Google Coral TPU or
+  # use your iGPU (see docs) for much lower CPU usage.
+  cpu1:
+    type: cpu
+
+cameras:
+  front_door:
+    ffmpeg:
+      inputs:
+        # Detect on the low-res substream (cheap on CPU)...
+        - path: rtsp://camera-account:{FRIGATE_RTSP_PASSWORD}@192.168.1.50:554/stream2
+          roles:
+            - detect
+        # ...and record the high-res main stream.
+        - path: rtsp://camera-account:{FRIGATE_RTSP_PASSWORD}@192.168.1.50:554/stream1
+          roles:
+            - record
+    detect:
+      width: 640    # match this to your substream resolution
+      height: 480
+      fps: 5
+    objects:
+      track:
+        - person
+        - car
+    record:
+      enabled: true
+      retain:
+        days: 7
+        mode: motion
+    snapshots:
+      enabled: true
+      retain:
+        default: 14
+
+# Add cameras by copying the block above and changing the name + IP. You're only
+# bounded by this machine's CPU / RAM / disk — not an 8-camera hub.
