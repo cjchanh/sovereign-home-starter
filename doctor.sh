@@ -27,7 +27,7 @@ PY
 )"
 
 # ollama reachable + model pulled
-if curl -fsS http://localhost:11434/api/tags -o /tmp/_sh_ollama.json 2>/dev/null; then
+if curl -fsS http://127.0.0.1:11434/api/tags -o /tmp/_sh_ollama.json 2>/dev/null; then
   pass "ollama reachable (:11434)"
   if python3 - "$model" <<'PY' 2>/dev/null
 import json, sys
@@ -44,8 +44,9 @@ else
   fail "ollama not reachable on :11434 — run: ollama serve"
 fi
 
-# frigate UI up
-if curl -fsS http://localhost:5000/api/version -o /dev/null 2>/dev/null; then
+# frigate UI up. Use 127.0.0.1 (IPv4), NOT localhost: Docker binds the port on
+# 127.0.0.1 only, but localhost can resolve to ::1 (IPv6) first -> false FAIL.
+if curl -fsS http://127.0.0.1:5000/api/version -o /dev/null 2>/dev/null; then
   pass "frigate up (:5000)"
 else
   fail "frigate not reachable on :5000 — cd nvr && docker compose up -d"
