@@ -75,7 +75,7 @@ def build_sitrep(cfg: dict) -> str:
         hours = s.get("nvr_hours", 24)
         parts.append(
             f"## Cameras (last {hours}h)\n"
-            + _nvr_events(s.get("nvr_url", "http://localhost:5000"), hours, api_key)
+            + _nvr_events(s.get("nvr_url", "http://127.0.0.1:5000"), hours, api_key)
         )
     todos = memory.load(cfg["memory_path"], kind="todo")
     if todos:

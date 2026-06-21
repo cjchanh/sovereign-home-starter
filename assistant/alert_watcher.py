@@ -195,7 +195,7 @@ def _send_alert(
         vision_timeout = float(alerts_cfg.get("vision_timeout", 30))
     except (TypeError, ValueError):
         vision_timeout = 30.0
-    ollama_url = str(cfg.get("ollama_url", "http://localhost:11434"))
+    ollama_url = str(cfg.get("ollama_url", "http://127.0.0.1:11434"))
 
     if event_id:
         snapshot = _fetch_snapshot(nvr_url, event_id, api_key)
@@ -234,7 +234,7 @@ def main() -> None:
     )
     args = parser.parse_args()
     cfg = cfg_mod.load_config(args.config)
-    nvr_url = cfg.get("sitrep", {}).get("nvr_url", "http://localhost:5000")
+    nvr_url = cfg.get("sitrep", {}).get("nvr_url", "http://127.0.0.1:5000")
     api_key = frigate_mod.get_api_key(cfg)
     try:
         cooldown_secs = float(cfg.get("alerts", {}).get("cooldown_seconds", 120))

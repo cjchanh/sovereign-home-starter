@@ -99,6 +99,14 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(cfg["model"], "llama3:8b")
         self.assertIsInstance(cfg["sitrep"], dict)
 
+    def test_loopback_defaults_not_localhost(self):
+        # Docker binds 127.0.0.1 (IPv4) only; localhost can resolve to ::1 (IPv6)
+        # first -> the watcher would silently miss Frigate. Defaults must be 127.0.0.1.
+        cfg = config.load_config(None)
+        self.assertIn("127.0.0.1", cfg["sitrep"]["nvr_url"])
+        self.assertNotIn("localhost", cfg["sitrep"]["nvr_url"])
+        self.assertIn("127.0.0.1", cfg["ollama_url"])
+
     def test_nvr_api_key_default_empty(self):
         cfg = config.load_config(None)
         self.assertEqual(cfg["sitrep"]["nvr_api_key"], "")

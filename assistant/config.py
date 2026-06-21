@@ -13,12 +13,12 @@ from pathlib import Path
 
 DEFAULT_CONFIG: dict = {
     "model": "qwen2.5:7b",
-    "ollama_url": "http://localhost:11434",
+    "ollama_url": "http://127.0.0.1:11434",
     "memory_path": "~/.sovereign-home/memory.jsonl",
     "sitrep": {
         "include_system": True,
         "include_nvr": True,
-        "nvr_url": "http://localhost:5000",
+        "nvr_url": "http://127.0.0.1:5000",
         "nvr_hours": 24,
         "nvr_api_key": "",          # optional: set or export FRIGATE_API_KEY
     },
