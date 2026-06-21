@@ -5,6 +5,8 @@
 Initial public release candidate.
 
 - Local assistant with memory, sitrep, Telegram notification, and two-way bot.
+- Optional local vision-LLM snapshot captioning (default off; the image is sent
+  only to local Ollama and never leaves the box; fail-soft).
 - Frigate NVR starter with loopback-bound ports and authenticated remote UI path.
 - Tailscale setup for private tailnet access.
 - Backup-to-Pi script and docs.
