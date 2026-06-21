@@ -1,0 +1,31 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile all Python (stdlib only — no install step)
+        run: python3 -m py_compile assistant/*.py
+
+      - name: Run the test suite
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Syntax-check every shell script
+        run: |
+          set -e
+          for s in $(find . -name '*.sh'); do
+            echo "bash -n $s"
+            bash -n "$s"
+          done

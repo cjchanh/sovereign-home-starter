@@ -35,6 +35,7 @@ import argparse
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -180,9 +181,13 @@ def _send_alert(
 
 
 def _seed_baseline(nvr_url: str, api_key: str = "") -> None:
+    # Seed the high-water mark so we don't blast history on first run, but never
+    # leave it unset: if Frigate has no events yet, anchor to "now" so the FIRST
+    # real event afterward is > the mark and DOES alert. (Anchoring to the latest
+    # existing event when there is history; to now() when there isn't.)
     events = _events(nvr_url, 0.0, api_key=api_key)
-    if events:
-        _save_ts(max(_start(e) for e in events))
+    baseline = max((_start(e) for e in events), default=time.time())
+    _save_ts(baseline)
     print("seeded baseline; no alerts on first run.")
 
 

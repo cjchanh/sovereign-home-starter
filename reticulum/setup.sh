@@ -28,7 +28,12 @@ fi
 # (isolated, gives the rnsd/rnstatus CLIs), then fall back to pip and --user.
 echo "installing rns (Reticulum Network Stack)..."
 if command -v pipx >/dev/null 2>&1; then
-  pipx install rns >/dev/null 2>&1 || pipx upgrade rns || true
+  # Don't swallow a real failure: install, or (if already present) upgrade. If
+  # BOTH fail, fall through to the error path below instead of `|| true`.
+  pipx install rns >/dev/null 2>&1 || pipx upgrade rns >/dev/null 2>&1 || {
+    echo "pipx could not install rns — try: pipx install rns"
+    exit 1
+  }
 elif python3 -m pip install --quiet --upgrade rns >/dev/null 2>&1; then
   :
 elif python3 -m pip install --quiet --user --upgrade rns >/dev/null 2>&1; then

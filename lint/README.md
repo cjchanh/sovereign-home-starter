@@ -13,9 +13,11 @@ pymarkdown scan .
 ## Compliance documents
 If you ever need to lint *compliance* docs — CUI/PII markings, military
 correspondence, readiness records — there's a local-first tool called
-**mildoc-lint** (`pip install mildoc-lint`, Apache-2.0). It's purpose-built for
-that, **not** a general Markdown linter, so reach for it only if compliance-doc
-checking is something you actually do.
+**mildoc-lint** (`pip install mildoc-lint`, Apache-2.0,
+[pypi.org/project/mildoc-lint](https://pypi.org/project/mildoc-lint)). Full
+disclosure: it's maintained by this repo's author. It's purpose-built for
+compliance docs, **not** a general Markdown linter, so reach for it only if that's
+something you actually do.
 
 ## Tailored checklist
 Want a check tailored to this stack — NVR is actually recording, tailscale is

@@ -19,15 +19,27 @@ class MemoryEntry:
 
 def _store_path(path: str) -> Path:
     p = Path(path).expanduser()
+    # Your notes/todos are personal — keep the dir owner-only (not the 0755 a
+    # default umask would give it).
     p.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        p.parent.chmod(0o700)
+    except OSError:
+        pass
     return p
 
 
 def remember(path: str, text: str, kind: str = "note") -> MemoryEntry:
     """Append one entry to the local memory store and return it."""
     entry = MemoryEntry(ts=time.time(), kind=kind, text=text.strip())
-    with _store_path(path).open("a", encoding="utf-8") as fh:
+    store = _store_path(path)
+    with store.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(asdict(entry)) + "\n")
+    # Lock the file owner-only (default umask would leave it 0644 = world-readable).
+    try:
+        store.chmod(0o600)
+    except OSError:
+        pass
     return entry
 
 

@@ -12,3 +12,8 @@ nvr/storage/
 # python
 __pycache__/
 *.pyc
+
+# macOS / archive cruft (so a folder-zip never ships these)
+.DS_Store
+._*
+__MACOSX/

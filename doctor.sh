@@ -31,9 +31,13 @@ if curl -fsS http://localhost:11434/api/tags -o /tmp/_sh_ollama.json 2>/dev/null
   pass "ollama reachable (:11434)"
   if python3 - "$model" <<'PY' 2>/dev/null
 import json, sys
-want = sys.argv[1].split(":")[0]
-models = json.load(open("/tmp/_sh_ollama.json")).get("models", [])
-sys.exit(0 if any(want in m.get("name", "") for m in models) else 1)
+want = sys.argv[1]
+# Match the EXACT configured model, tag and all. Ollama reports "qwen2.5:7b";
+# a default ":latest" config is matched against "<name>:latest" or a bare "<name>".
+names = {m.get("name", "") for m in json.load(open("/tmp/_sh_ollama.json")).get("models", [])}
+bare = {n.split(":")[0] for n in names}
+ok = want in names or (":" not in want and want in bare)
+sys.exit(0 if ok else 1)
 PY
   then pass "assistant model present ($model)"; else fail "model '$model' not pulled — run: ollama pull $model"; fi
 else

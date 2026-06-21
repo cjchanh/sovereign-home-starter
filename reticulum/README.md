@@ -9,6 +9,12 @@ or packet radio.
 This is a **node starter** — install, config, daemon, honest docs. It does not
 include a messaging or application layer (see nomadnet / LXMF for that).
 
+> **Sovereignty note:** the shipped `config.example` enables a *public* Reticulum
+> testnet entry node over TCP so it works out of the box. That means your node
+> announces to the public testnet. For a fully private mesh, comment that interface
+> out and use only the local TCP server and/or an RNode/LoRa interface — see the
+> note in `config.example`.
+
 ## Setup
 
 ```bash

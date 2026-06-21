@@ -13,6 +13,7 @@ import io
 import json
 import sys
 import tempfile
+import time
 import unittest
 import urllib.request
 from pathlib import Path
@@ -364,6 +365,28 @@ class AlertWatcherTests(unittest.TestCase):
         notify.send_photo = lambda *a, **k: self.fail("must not alert on first run")
         alert_watcher.main()
         self.assertEqual(float(self.state.read_text()), 100.0)
+
+    def test_first_run_empty_frigate_anchors_to_now(self):
+        """First run with ZERO Frigate events must still WRITE a baseline (~now),
+        so the next real event is > the mark and alerts — not silently swallowed."""
+        alert_watcher._events = _frigate_backend([])  # Frigate has no events yet
+        notify.send = lambda *a, **k: self.fail("must not alert on first run")
+        notify.send_photo = lambda *a, **k: self.fail("must not alert on first run")
+        before = time.time()
+        alert_watcher.main()
+        seeded = float(self.state.read_text())  # must be set, not absent
+        self.assertGreaterEqual(seeded, before - 1)
+        # an event slightly AFTER the seed must now alert (not become a silent baseline)
+        self.state.write_text(str(seeded))
+        alert_watcher._events = _frigate_backend(
+            [{"id": "n", "label": "person", "camera": "gate", "start_time": seeded + 5}]
+        )
+        alert_watcher._fetch_snapshot = self._no_snapshot
+        got: list = []
+        notify.send = lambda t, c=None: (got.append(t) or True)
+        notify.send_photo = lambda *a, **k: False
+        alert_watcher.main()
+        self.assertEqual(len(got), 1)  # the first post-seed event DID alert
 
     def test_retry_hold_on_send_failure(self):
         """Both photo AND text fallback fail → mark must NOT advance."""

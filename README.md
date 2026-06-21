@@ -4,7 +4,12 @@ A **local-first, private, zero-subscription** home stack you stand up on one Lin
 box and reach from your phone. Drop this repo into Claude Code and it'll walk you
 through setup.
 
-Four pieces, all running on **your** hardware — nothing phones home:
+Four pieces, all running on **your** hardware. The core — assistant, model,
+camera detection, recordings — is fully local and never leaves the box. The **one
+exception** is opt-in: if you enable the Telegram features (sitrep-to-phone,
+camera alerts, the two-way bot), those messages route through Telegram's servers
+like any Telegram message. Leave Telegram off and it's 100% local; the alerts also
+work over your tailnet without it.
 
 1. **Private AI assistant** — a local model (Ollama) with memory. Chat in the terminal
    **or text it from your phone** (two-way Telegram bot); it remembers what you tell it
@@ -87,9 +92,13 @@ and ask it to walk you through — the `CLAUDE.md` here tells it how.
 (`doctor.sh` and `setup.sh` live at the root.)
 
 ## Privacy + safety
-- Everything runs locally. The assistant uses a local model; detection is on-device.
-- Secrets (`.env`, `nvr/config.yml`, `assistant/config.json`) are gitignored — never
-  committed.
-- Services are exposed to your **tailnet only**, never the public internet.
+- The core runs locally: a local model, on-device detection, recordings on your disk.
+- **The one thing that leaves the box** is opt-in Telegram (sitrep/alerts/bot) — those
+  messages transit Telegram's servers. Disable Telegram for a fully-local setup; the
+  alerts still work over your tailnet.
+- Secrets (`.env`, `nvr/config.yml`, `assistant/config.json`) are gitignored, and
+  `setup.sh` `chmod 600`s them; your assistant notes (`~/.sovereign-home/`) are owner-only.
+- Remote access is **tailnet only**, and via Frigate's *authenticated* port (8971) —
+  never the unauthenticated :5000, which stays bound to localhost.
 
 MIT licensed. Yours to fork, change, and run.

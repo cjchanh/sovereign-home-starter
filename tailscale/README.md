@@ -15,9 +15,10 @@ https://<this-node>.<your-tailnet>.ts.net/
 `tailscale serve` keeps it private to your own devices. Do **not** use
 `tailscale funnel` unless you deliberately want public exposure.
 
-**Heads up:** `serve` gives *every* node on your tailnet access to the camera UI
-with no extra login. Keep your tailnet single-user, or restrict port 5000 with a
-Tailscale ACL grant. (Recent Frigate stable also ships built-in auth.)
+**Heads up:** this serves **8971**, Frigate's *authenticated* UI — log in with the
+admin credentials Frigate prints in its logs on first start. (We deliberately do
+**not** serve 5000, the unauthenticated port.) Keep your tailnet trusted, and a
+Tailscale ACL grant can further restrict who reaches this node.
 
 To stop serving: `sudo tailscale serve reset`.
 

@@ -17,11 +17,17 @@ services:
         tmpfs:
           size: 1000000000
     ports:
-      # Bound to 127.0.0.1 so the UNAUTHENTICATED Frigate UI is reachable only from
-      # this host (and via 'tailscale serve', which proxies from localhost). Do NOT
-      # change to a bare "5000:5000" / 0.0.0.0 — that exposes your cameras to every
-      # device on your LAN.
-      - "127.0.0.1:5000:5000"      # web UI
+      # All bound to 127.0.0.1 so nothing is reachable from the LAN — only this host
+      # and 'tailscale serve' (which proxies from localhost). Do NOT change to a bare
+      # "PORT:PORT" / 0.0.0.0 — that exposes your cameras to every device on your LAN.
+      #
+      # 8971 = AUTHENTICATED UI+API (Frigate generates admin creds on first start).
+      #        This is the one to expose remotely (tailscale/setup.sh serves it).
+      # 5000 = UNAUTHENTICATED internal UI+API. Frigate's docs say it "should never be
+      #        exposed publicly" — it stays loopback-only for the local integrations
+      #        (the assistant's sitrep/alert_watcher call it on localhost).
+      - "127.0.0.1:8971:8971"      # authenticated web UI  <- serve THIS one
+      - "127.0.0.1:5000:5000"      # unauthenticated internal API (loopback only)
       - "127.0.0.1:8554:8554"      # RTSP restream
       - "127.0.0.1:8555:8555/tcp"  # WebRTC
       - "127.0.0.1:8555:8555/udp"
