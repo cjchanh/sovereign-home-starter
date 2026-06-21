@@ -109,10 +109,16 @@ The model files ship inside the Frigate Docker image at those paths — no downl
 needed. Replace the `detectors: cpu1:` block in your `config.yml` with the
 `detectors: ov:` block above, AND add the top-level `model:` block.
 
-**Note on heavier loads (many cameras or a weaker CPU):**
-- **Google Coral TPU** (`device: usb` or `device: pci`) — 100+ inferences/sec,
-  passes to the host via USB or M.2. Best option for 4+ camera setups.
-- **Intel iGPU** (`device: GPU`) — OpenVINO can offload to an integrated Intel
-  GPU. Add the GPU device to the Frigate container in `docker-compose.yml`
-  (uncomment the `devices:` lines already in the example).
-- See `https://docs.frigate.video/configuration/detectors` for the full list.
+**Note on heavier loads (many cameras or a weaker CPU)** — current Frigate supports
+several accelerators; pick by your hardware:
+- **Hailo-8 / Hailo-8L** (`type: hailo8l`) — a current, well-supported option,
+  popular as an M.2/HAT add-on (e.g. on a Raspberry Pi 5). Good first reach for a
+  small low-power box doing several cameras.
+- **Intel iGPU** (`type: openvino`, `device: GPU`) — if your box has integrated Intel
+  graphics, OpenVINO offloads to it. Add the GPU device to the Frigate container in
+  `docker-compose.yml` (uncomment the `devices:` line in the example).
+- **Google Coral TPU** (`type: edgetpu`, `device: usb`/`pci`) — still supported and
+  fast, but newer builds increasingly reach for Hailo or OpenVINO first; Coral USB/M.2
+  stock can be harder to source.
+- See `https://docs.frigate.video/configuration/object_detectors` for the full,
+  current list and per-detector config.
