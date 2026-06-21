@@ -107,6 +107,12 @@ class ConfigTests(unittest.TestCase):
         cfg = config.load_config(None)
         self.assertEqual(cfg["alerts"]["cooldown_seconds"], 120)
 
+    def test_vision_defaults(self):
+        cfg = config.load_config(None)
+        self.assertIs(cfg["alerts"]["vision_caption"], False)
+        self.assertEqual(cfg["alerts"]["vision_model"], "qwen2.5vl:7b")
+        self.assertEqual(cfg["alerts"]["vision_timeout"], 30)
+
     def test_alerts_deep_merged(self):
         p = str(Path(tempfile.mkdtemp()) / "c.json")
         Path(p).write_text(json.dumps({"alerts": {"cooldown_seconds": 30}}))

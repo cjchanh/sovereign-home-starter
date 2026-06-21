@@ -191,14 +191,21 @@ def _send_alert(
     alerts_cfg = cfg.get("alerts", {})
     vision_enabled = bool(alerts_cfg.get("vision_caption", False))
     vision_model = str(alerts_cfg.get("vision_model", "qwen2.5vl:7b"))
+    try:
+        vision_timeout = float(alerts_cfg.get("vision_timeout", 30))
+    except (TypeError, ValueError):
+        vision_timeout = 30.0
     ollama_url = str(cfg.get("ollama_url", "http://localhost:11434"))
 
     if event_id:
         snapshot = _fetch_snapshot(nvr_url, event_id, api_key)
         if snapshot is not None:
-            # Optional: enrich caption with a local vision description.
+            # Optional: enrich caption with a local vision description. Bounded by
+            # vision_timeout so a slow model can't stall the run more than that per alert.
             if vision_enabled:
-                description = vision.describe_image(ollama_url, vision_model, snapshot)
+                description = vision.describe_image(
+                    ollama_url, vision_model, snapshot, timeout=vision_timeout
+                )
                 if description:
                     caption = f"{caption}\n{description}"
             if notify.send_photo(caption, snapshot, cfg):

@@ -15,6 +15,9 @@ import urllib.request
 _PROMPT = (
     "Describe who or what is in this security camera frame in one short sentence."
 )
+# A caption response is tiny; cap the read so a misbehaving local service answering
+# on ollama_url can't stream an unbounded body and OOM the process.
+_MAX_RESP_BYTES = 256 * 1024
 
 
 def describe_image(
@@ -58,7 +61,7 @@ def describe_image(
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+            data = json.loads(resp.read(_MAX_RESP_BYTES).decode("utf-8"))
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError, ValueError) as exc:
         print(f"[vision] caption failed: {exc}", file=sys.stderr)
         return None

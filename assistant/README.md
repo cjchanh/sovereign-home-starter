@@ -161,26 +161,38 @@ Any Ollama-compatible vision model works (e.g. `llava:13b`, `moondream:1.8b`).
 Smaller models are faster; larger ones give better descriptions. Check what is
 available with `ollama list`.
 
+**`alerts.vision_timeout`** (default `30`) — max seconds for a single vision call
+before it gives up and sends the plain alert. Lower it on slow hardware so a hung
+model can't stall a run for long.
+
 ```json
 "alerts": {
   "cooldown_seconds": 120,
   "vision_caption": true,
-  "vision_model": "qwen2.5vl:7b"
+  "vision_model": "qwen2.5vl:7b",
+  "vision_timeout": 30
 }
 ```
 
 **Fail-soft guarantee:** if the vision model is slow, unavailable, or returns
 garbage, `vision.describe_image` returns `None` and the plain alert is sent
-unchanged. A failed or absent vision model never drops, delays past its timeout,
-or blocks an alert — the timeout is bounded at 60 s by default. Delivery semantics
-are identical to the no-vision path.
+unchanged. A failed or absent vision model never drops or blocks an alert, and
+never delays it past `vision_timeout`. Delivery semantics are identical to the
+no-vision path.
 
-**Latency caveat:** a vision model adds one local inference call per alert (after
-the snapshot fetch, before delivery). On a box with a GPU this is typically 1–5 s.
-On CPU only, a 7B vision model can take 30–90 s — longer than the alert itself.
-If latency matters more than captions, leave `vision_caption` at `false` (the
-default) or use a smaller model such as `moondream:1.8b`. The fail-soft design
-means a CPU-heavy model simply adds latency; it does not break alerting.
+**Latency caveat (read this before enabling on CPU):** the vision call is
+**serialized per alert** — one local inference (after the snapshot fetch, before
+delivery). On a GPU this is ~1–5 s. On CPU a 7B vision model can take 30–90 s.
+Two things follow:
+- **Bursts multiply it.** The watcher processes all new events in one run, so *N*
+  un-cooled alerts serialize *N* vision calls. At a 30 s timeout, several alerts in
+  one run can exceed your cron interval (e.g. `*/2`). Keep `cooldown_seconds`
+  non-zero, and/or use a small model (`moondream:1.8b`) when vision is on.
+- **Tune the cap.** Lower `vision_timeout` to bound the worst case per alert.
+
+If captions aren't worth the latency on your box, leave `vision_caption` at
+`false` (the default). The fail-soft design means a slow model only adds latency —
+it never breaks alerting.
 
 ## Files
 - `assistant.py` — chat loop with memory + commands

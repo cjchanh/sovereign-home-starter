@@ -16,6 +16,7 @@
   "alerts": {
     "cooldown_seconds": 120,
     "vision_caption": false,
-    "vision_model": "qwen2.5vl:7b"
+    "vision_model": "qwen2.5vl:7b",
+    "vision_timeout": 30
   }
 }
