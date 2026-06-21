@@ -77,6 +77,8 @@ and ask it to walk you through — the `CLAUDE.md` here tells it how.
 | `tailscale/`  | Wire the box into your tailnet, serve services privately       |
 | `backup/`     | rsync the stack to your Pi over Tailscale                      |
 | `docs/`       | Box-hardening checklist (home-grade)                           |
+| `security/`   | Read-only hardening audit (`./security/audit.sh`)              |
+| `reticulum/`  | Optional sovereign mesh node (Reticulum/RNS) starter           |
 | `tests/`      | Offline smoke tests (`python3 -m unittest discover -s tests`)   |
 | `lint/`       | Optional mildoc-lint for compliance docs                       |
 

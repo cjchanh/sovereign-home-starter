@@ -34,6 +34,8 @@ You (the agent) are helping the owner stand this up. Be concrete and hands-on.
 - `tailscale/` — wire the box into your tailnet and serve services privately
 - `backup/` — rsync the stack to a tailnet host (e.g. the Pi)
 - `docs/` — home-grade box-hardening checklist
+- `security/` — read-only hardening audit that scores docs/HARDENING.md
+- `reticulum/` — optional sovereign mesh (Reticulum/RNS) node starter
 - `tests/` — offline smoke tests (`python3 -m unittest discover -s tests`)
 - `doctor.sh` — health check that pokes the live services (Ollama/Frigate/Tailscale/Telegram)
 - `lint/` — optional: compliance-doc linting with mildoc-lint

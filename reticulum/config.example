@@ -1,0 +1,89 @@
+# Reticulum config example — sovereign-home-starter
+#
+# Copy to ~/.reticulum/config (setup.sh does this).
+# RNS generates your node's cryptographic identity on first run from this
+# directory. Do NOT move or delete ~/.reticulum/ — that is your identity.
+#
+# Docs: https://reticulum.network/manual/
+
+[reticulum]
+
+# Where RNS stores its persistent state, announce queue, and identities.
+# Default is ~/.reticulum — leave it unless you have a specific reason to move it.
+storagepath = ~/.reticulum
+
+# Whether to share bandwidth with neighbors on shared interfaces (default: yes).
+# On a home node with a static TCP interface this makes no difference either way.
+share_instance = Yes
+
+# Maximum announce rate (per interface, per second). Default is fine for a home node.
+# announce_rate_target = 3.5
+
+[logging]
+
+# 0=critical 1=error 2=warning 3=info 4=debug 5=extreme
+loglevel = 3
+
+
+[interfaces]
+
+# ── TCP interface (enabled by default) ────────────────────────────────────────
+# Connects to the public Reticulum testnet over TCP/IP so your node can reach
+# the wider network today with no special hardware. You can also host a local
+# TCP listener to let other LAN/tailnet nodes connect to you.
+
+[[Default TCP Interface]]
+type = TCPClientInterface
+enabled = yes
+
+# A public Reticulum testnet entry node. Replace with any trusted RNS node.
+target_host = amsterdam.connect.reticulum.network
+target_port = 4965
+
+
+# ── Local TCP listener (optional) ─────────────────────────────────────────────
+# Uncomment to let other nodes on your LAN or tailnet connect to this node.
+# Bind to 127.0.0.1 or your tailnet IP to stay private.
+
+# [[Local TCP Server]]
+# type = TCPServerInterface
+# enabled = no
+# listen_ip = 127.0.0.1
+# listen_port = 4242
+
+
+# ── RNode / LoRa interface (commented out — needs hardware) ───────────────────
+# An RNode is an open-source LoRa radio you flash with RNode firmware.
+# LoRa is LOW bandwidth (a few kbps). It is excellent for sensors, telemetry,
+# and messaging across acreage or between buildings on solar with NO WiFi
+# infrastructure. It is NOT for HD video — keep cameras on WiFi/Frigate.
+#
+# RNode firmware: https://github.com/markqvist/RNode_Firmware
+# Supported hardware: LilyGO TTGO LoRa32, Heltec LoRa32, RAK modules, etc.
+#
+# Once you have RNode hardware and have flashed it, uncomment and adjust:
+#
+# [[RNode LoRa]]
+# type = RNodeInterface
+# enabled = no
+#
+# # Serial port the RNode appears on (check: ls /dev/ttyUSB* or /dev/ttyACM*)
+# port = /dev/ttyUSB0
+#
+# # Frequency in Hz — pick a legal frequency for your region.
+# # US 915 MHz ISM band example:
+# frequency = 915000000
+#
+# # Bandwidth in Hz. Lower = longer range, lower throughput. Common choices:
+# #   125000 (125 kHz) — good balance for text/sensors
+# #   250000 (250 kHz) — faster, shorter range
+# bandwidth = 125000
+#
+# # Spreading factor (7–12). Higher = longer range, slower.
+# spreading_factor = 8
+#
+# # Coding rate denominator (5–8). Higher = more error correction, slower.
+# coding_rate = 5
+#
+# # TX power in dBm. Check legal limits for your region.
+# txpower = 17

@@ -1,0 +1,31 @@
+# systemd user service for the Reticulum daemon (rnsd).
+# Runs as YOUR user — no root required.
+#
+# Install:
+#   cp rnsd.service.example ~/.config/systemd/user/rnsd.service
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now rnsd
+#
+# Check:
+#   systemctl --user status rnsd
+#   journalctl --user -u rnsd -f
+
+[Unit]
+Description=Reticulum Network Stack daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# If systemd can't find rnsd (e.g. pipx/--user installs to ~/.local/bin, which
+# isn't always on the service PATH), set the full path from: which rnsd
+ExecStart=rnsd
+# Restart if rnsd exits unexpectedly (e.g. USB RNode unplugged and re-plugged).
+Restart=on-failure
+RestartSec=10
+
+# rnsd writes its state and logs under ~/.reticulum — no special paths needed.
+# If you moved storagepath in your config, add: Environment="RNS_DIR=/your/path"
+
+[Install]
+WantedBy=default.target
