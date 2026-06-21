@@ -1,10 +1,17 @@
+# NOTE: keep comments on their OWN lines. An inline "#" in .gitignore is NOT a
+# comment — it becomes part of the pattern and silently breaks the rule.
+
 # secrets + real configs (never commit)
 .env
-!.env.example          # must ship — overrides a global .env.* ignore rule
+!.env.example
 assistant/config.json
-nvr/config/            # real Frigate config + sqlite db + generated state
-nvr/config.yml         # legacy single-file path — keep ignored so a stray one can't be staged
-!nvr/config.example.yml  # example ships tracked
+
+# Frigate real config + sqlite db + generated runtime state (the whole dir)
+nvr/config/
+# legacy single-file path — keep ignored so a stray one can't be staged
+nvr/config.yml
+# but ship the example
+!nvr/config.example.yml
 
 # local data
 nvr/storage/
@@ -15,7 +22,7 @@ nvr/storage/
 __pycache__/
 *.pyc
 
-# macOS / archive cruft (so a folder-zip never ships these)
+# macOS / archive cruft
 .DS_Store
 ._*
 __MACOSX/

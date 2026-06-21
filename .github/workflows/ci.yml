@@ -87,7 +87,6 @@ jobs:
         run: |
           git archive HEAD | tar -t | python3 - <<'PY'
           import sys
-          forbidden = [".env", "config.json", ".DS_Store", "__pycache__", ".git"]
           paths = [line.strip() for line in sys.stdin]
           found = []
           for p in paths:
@@ -95,7 +94,12 @@ jobs:
               # .env.example is allowed; only the real .env is forbidden
               if base == ".env" and not p.endswith(".env.example"):
                   found.append(p)
-              elif base in ("config.json", ".DS_Store", "__pycache__"):
+              elif base in ("config.json", ".DS_Store", "__pycache__", ".jwt_secret"):
+                  found.append(p)
+              # Frigate runtime state must never be tracked (db, secrets, config)
+              elif p.startswith("nvr/config/"):
+                  found.append(p)
+              elif base.endswith(".db") or base.endswith(".db-wal") or base.endswith(".db-shm"):
                   found.append(p)
           if found:
               print("[FAIL] sensitive/unwanted paths in git archive:")
