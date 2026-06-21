@@ -28,6 +28,7 @@ import memory  # noqa: E402
 import notify  # noqa: E402
 import sitrep  # noqa: E402
 import telegram_bot  # noqa: E402
+import vision  # noqa: E402
 
 
 class _Resp(io.BytesIO):
@@ -138,6 +139,26 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(cfg["ollama_url"], "http://host.docker.internal:11434")
         self.assertEqual(cfg["memory_path"], "/state/memory.jsonl")
         self.assertEqual(cfg["sitrep"]["nvr_url"], "http://frigate:5000")
+
+    def test_vision_caption_default_off(self):
+        """vision_caption defaults to False — opt-in only."""
+        cfg = config.load_config(None)
+        self.assertFalse(cfg["alerts"]["vision_caption"])
+
+    def test_vision_model_default(self):
+        """vision_model default is qwen2.5vl:7b."""
+        cfg = config.load_config(None)
+        self.assertEqual(cfg["alerts"]["vision_model"], "qwen2.5vl:7b")
+
+    def test_vision_caption_deep_merged(self):
+        """vision_caption can be enabled via the alerts block in config.json."""
+        p = str(Path(tempfile.mkdtemp()) / "c.json")
+        Path(p).write_text(json.dumps({"alerts": {"vision_caption": True, "vision_model": "llava:13b"}}))
+        cfg = config.load_config(p)
+        self.assertTrue(cfg["alerts"]["vision_caption"])
+        self.assertEqual(cfg["alerts"]["vision_model"], "llava:13b")
+        # pre-existing key must still be present (deep-merge, not replace)
+        self.assertEqual(cfg["alerts"]["cooldown_seconds"], 120)
 
 
 class NotifyTests(unittest.TestCase):
@@ -354,6 +375,115 @@ class TelegramBotTests(unittest.TestCase):
         self.assertEqual(telegram_bot._next_backoff(0, base=1, cap=60), 1)
 
 
+class VisionTests(unittest.TestCase):
+    """Tests for assistant/vision.py — fail-soft local captioning."""
+
+    def test_describe_image_returns_text_on_ok_response(self):
+        """describe_image returns the model's content string on a well-formed response."""
+        body = json.dumps({
+            "message": {"content": "a person in a dark jacket at the front door"}
+        }).encode()
+        orig = urllib.request.urlopen
+        urllib.request.urlopen = _mock_urlopen(body)
+        try:
+            result = vision.describe_image(
+                "http://localhost:11434", "qwen2.5vl:7b", b"\xff\xd8\xff"
+            )
+        finally:
+            urllib.request.urlopen = orig
+        self.assertEqual(result, "a person in a dark jacket at the front door")
+
+    def test_describe_image_returns_none_on_url_error(self):
+        """describe_image returns None (no raise) when Ollama is unreachable."""
+        import urllib.error
+
+        def fake_urlopen(req, timeout=0):
+            raise urllib.error.URLError("connection refused")
+
+        orig = urllib.request.urlopen
+        urllib.request.urlopen = fake_urlopen
+        try:
+            result = vision.describe_image(
+                "http://localhost:11434", "qwen2.5vl:7b", b"\xff\xd8\xff"
+            )
+        finally:
+            urllib.request.urlopen = orig
+        self.assertIsNone(result)
+
+    def test_describe_image_returns_none_on_timeout(self):
+        """describe_image returns None (no raise) on TimeoutError."""
+        def fake_urlopen(req, timeout=0):
+            raise TimeoutError("timed out")
+
+        orig = urllib.request.urlopen
+        urllib.request.urlopen = fake_urlopen
+        try:
+            result = vision.describe_image(
+                "http://localhost:11434", "qwen2.5vl:7b", b"\xff\xd8\xff"
+            )
+        finally:
+            urllib.request.urlopen = orig
+        self.assertIsNone(result)
+
+    def test_describe_image_returns_none_on_empty_content(self):
+        """describe_image returns None when model returns an empty string."""
+        body = json.dumps({"message": {"content": ""}}).encode()
+        orig = urllib.request.urlopen
+        urllib.request.urlopen = _mock_urlopen(body)
+        try:
+            result = vision.describe_image(
+                "http://localhost:11434", "qwen2.5vl:7b", b"\xff\xd8\xff"
+            )
+        finally:
+            urllib.request.urlopen = orig
+        self.assertIsNone(result)
+
+    def test_describe_image_returns_none_on_non_dict_response(self):
+        """describe_image returns None when the JSON response is not a dict."""
+        body = b"null"
+        orig = urllib.request.urlopen
+        urllib.request.urlopen = _mock_urlopen(body)
+        try:
+            result = vision.describe_image(
+                "http://localhost:11434", "qwen2.5vl:7b", b"\xff\xd8\xff"
+            )
+        finally:
+            urllib.request.urlopen = orig
+        self.assertIsNone(result)
+
+    def test_describe_image_returns_none_on_json_decode_error(self):
+        """describe_image returns None (no raise) on malformed JSON."""
+        orig = urllib.request.urlopen
+        urllib.request.urlopen = _mock_urlopen(b"not json {{")
+        try:
+            result = vision.describe_image(
+                "http://localhost:11434", "qwen2.5vl:7b", b"\xff\xd8\xff"
+            )
+        finally:
+            urllib.request.urlopen = orig
+        self.assertIsNone(result)
+
+    def test_describe_image_returns_none_on_empty_image_bytes(self):
+        """describe_image returns None immediately when given empty bytes."""
+        result = vision.describe_image(
+            "http://localhost:11434", "qwen2.5vl:7b", b""
+        )
+        self.assertIsNone(result)
+
+    def test_describe_image_strips_whitespace(self):
+        """describe_image strips leading/trailing whitespace from the response."""
+        body = json.dumps({"message": {"content": "  a car in the driveway  "}}).encode()
+        orig = urllib.request.urlopen
+        urllib.request.urlopen = _mock_urlopen(body)
+        try:
+            result = vision.describe_image(
+                "http://localhost:11434", "qwen2.5vl:7b", b"\xff\xd8\xff"
+            )
+        finally:
+            urllib.request.urlopen = orig
+        self.assertEqual(result, "a car in the driveway")
+
+
 class AlertWatcherTests(unittest.TestCase):
     def setUp(self):
         self.tmpdir = Path(tempfile.mkdtemp())
@@ -365,6 +495,7 @@ class AlertWatcherTests(unittest.TestCase):
         self._orig_send = notify.send
         self._orig_send_photo = notify.send_photo
         self._orig_fetch_snapshot = alert_watcher._fetch_snapshot
+        self._orig_vision_describe = vision.describe_image
         alert_watcher.STATE = self.state
         alert_watcher.COOLDOWN_STATE = self.cooldown_state
         sys.argv = ["alert_watcher.py", "--config", "/nonexistent.json"]
@@ -376,6 +507,7 @@ class AlertWatcherTests(unittest.TestCase):
         notify.send = self._orig_send
         notify.send_photo = self._orig_send_photo
         alert_watcher._fetch_snapshot = self._orig_fetch_snapshot
+        vision.describe_image = self._orig_vision_describe
 
     def _no_snapshot(self, nvr_url: str, event_id: str, api_key: str = "") -> None:
         """Stub: snapshot unavailable (None) so alerts fall back to text."""
@@ -565,6 +697,102 @@ class AlertWatcherTests(unittest.TestCase):
         alert_watcher.main()
         # Mark must be held at 0.0 — delivery failed
         self.assertEqual(float(self.state.read_text()), 0.0)
+
+    # --- Vision integration tests ---
+
+    def test_vision_enabled_description_appended_to_caption(self):
+        """With vision_caption=true and a working vision call, the sent caption
+        contains the description from the vision model."""
+        self.state.write_text("50.0")
+        alert_watcher._events = _frigate_backend(
+            [{"id": "v1", "label": "person", "camera": "front", "start_time": 500.0}]
+        )
+        alert_watcher._fetch_snapshot = self._ok_snapshot
+        vision.describe_image = lambda url, model, img, timeout=60: (
+            "a person in a dark jacket at the front door"
+        )
+        captions: list = []
+        notify.send_photo = lambda cap, img, cfg=None: (captions.append(cap) or True)
+        notify.send = lambda *a, **k: self.fail("text path must not be called")
+        sys.argv = [
+            "alert_watcher.py",
+            "--config",
+            "/nonexistent.json",
+        ]
+        # Inject vision_caption=true into the config via a real config file.
+        cfg_path = str(self.tmpdir / "vcfg.json")
+        Path(cfg_path).write_text(json.dumps({
+            "alerts": {"vision_caption": True, "vision_model": "qwen2.5vl:7b"},
+            "notify": {"telegram_bot_token": "t", "telegram_chat_id": "1"},
+        }))
+        sys.argv = ["alert_watcher.py", "--config", cfg_path]
+        alert_watcher.main()
+        self.assertEqual(len(captions), 1)
+        self.assertIn("a person in a dark jacket at the front door", captions[0])
+        self.assertEqual(float(self.state.read_text()), 500.0)
+
+    def test_vision_enabled_but_returns_none_sends_plain_caption(self):
+        """With vision_caption=true but vision returning None, the plain caption
+        is still sent and the mark still advances (alert not dropped)."""
+        self.state.write_text("50.0")
+        alert_watcher._events = _frigate_backend(
+            [{"id": "v2", "label": "person", "camera": "back", "start_time": 600.0}]
+        )
+        alert_watcher._fetch_snapshot = self._no_snapshot  # no snapshot -> text path
+        vision.describe_image = lambda *a, **kw: None
+        text_calls: list = []
+        notify.send = lambda t, c=None: (text_calls.append(t) or True)
+        notify.send_photo = lambda *a, **k: False
+        cfg_path = str(self.tmpdir / "vcfg2.json")
+        Path(cfg_path).write_text(json.dumps({
+            "alerts": {"vision_caption": True, "vision_model": "qwen2.5vl:7b"},
+            "notify": {"telegram_bot_token": "t", "telegram_chat_id": "1"},
+        }))
+        sys.argv = ["alert_watcher.py", "--config", cfg_path]
+        alert_watcher.main()
+        self.assertEqual(len(text_calls), 1)
+        self.assertEqual(float(self.state.read_text()), 600.0)
+
+    def test_vision_disabled_no_vision_call_made(self):
+        """With vision_caption=false (default), vision.describe_image is never called
+        and the caption is byte-for-byte the plain alert string."""
+        self.state.write_text("50.0")
+        alert_watcher._events = _frigate_backend(
+            [{"id": "v3", "label": "car", "camera": "side", "start_time": 700.0}]
+        )
+        alert_watcher._fetch_snapshot = self._no_snapshot
+        vision_called = []
+        vision.describe_image = lambda *a, **kw: vision_called.append(True) or "should not appear"
+        text_calls: list = []
+        notify.send = lambda t, c=None: (text_calls.append(t) or True)
+        notify.send_photo = lambda *a, **k: False
+        # Default config has vision_caption=False — use the real default (no config file).
+        sys.argv = ["alert_watcher.py", "--config", "/nonexistent.json"]
+        alert_watcher.main()
+        self.assertEqual(vision_called, [])  # vision NOT called
+        self.assertEqual(len(text_calls), 1)
+        self.assertEqual(text_calls[0], "\U0001F6A8 car at side")  # byte-for-byte plain caption
+        self.assertEqual(float(self.state.read_text()), 700.0)
+
+    def test_vision_enabled_delivery_failure_still_holds_mark(self):
+        """Retry-hold invariant: with vision enabled, a true delivery failure (both
+        photo and text fail) still holds the mark — vision path does not bypass it."""
+        self.state.write_text("50.0")
+        alert_watcher._events = _frigate_backend(
+            [{"id": "v4", "label": "person", "camera": "gate", "start_time": 800.0}]
+        )
+        alert_watcher._fetch_snapshot = self._ok_snapshot
+        vision.describe_image = lambda *a, **kw: "someone suspicious"
+        notify.send_photo = lambda *a, **k: False
+        notify.send = lambda *a, **k: False
+        cfg_path = str(self.tmpdir / "vcfg3.json")
+        Path(cfg_path).write_text(json.dumps({
+            "alerts": {"vision_caption": True, "vision_model": "qwen2.5vl:7b"},
+            "notify": {"telegram_bot_token": "t", "telegram_chat_id": "1"},
+        }))
+        sys.argv = ["alert_watcher.py", "--config", cfg_path]
+        alert_watcher.main()
+        self.assertEqual(float(self.state.read_text()), 50.0)  # mark held
 
 
 class SitrepTests(unittest.TestCase):

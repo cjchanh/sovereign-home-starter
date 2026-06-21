@@ -26,6 +26,13 @@ Cooldown:
 - The last-delivery timestamp per camera is persisted in a sibling JSON state file
   across cron runs.
 
+Vision caption (optional):
+- When cfg["alerts"]["vision_caption"] is true and a snapshot was fetched, the
+  snapshot is sent to a LOCAL Ollama vision model to produce a one-line description.
+  The image never leaves the box — it goes to local Ollama only.
+- A slow or unavailable vision model returns None; the plain caption is sent
+  unchanged. Vision failure never blocks or drops an alert.
+
 Usage:
     python3 alert_watcher.py [--config config.json]
 """
@@ -43,6 +50,7 @@ from pathlib import Path
 import config as cfg_mod
 import frigate as frigate_mod
 import notify
+import vision
 
 ALERT_LABELS = {"person", "car"}
 # State dir is env-overridable so it can live on a persistent volume in a container
@@ -167,6 +175,12 @@ def _send_alert(
 ) -> bool:
     """Deliver one alert — photo with caption, falling back to text.
 
+    When cfg["alerts"]["vision_caption"] is true and a snapshot was successfully
+    fetched, the snapshot is passed to a local Ollama vision model for a one-line
+    description. The description is appended to the caption when available. Vision
+    failure (None return) silently falls back to the plain caption — it never
+    blocks delivery or changes the delivered/not-delivered outcome.
+
     Returns True if the alert was delivered by either path, False if both failed.
     """
     cam = ev.get("camera", "camera")
@@ -174,14 +188,24 @@ def _send_alert(
     caption = f"\U0001F6A8 {label} at {cam}"
     event_id = ev.get("id")
 
+    alerts_cfg = cfg.get("alerts", {})
+    vision_enabled = bool(alerts_cfg.get("vision_caption", False))
+    vision_model = str(alerts_cfg.get("vision_model", "qwen2.5vl:7b"))
+    ollama_url = str(cfg.get("ollama_url", "http://localhost:11434"))
+
     if event_id:
         snapshot = _fetch_snapshot(nvr_url, event_id, api_key)
         if snapshot is not None:
+            # Optional: enrich caption with a local vision description.
+            if vision_enabled:
+                description = vision.describe_image(ollama_url, vision_model, snapshot)
+                if description:
+                    caption = f"{caption}\n{description}"
             if notify.send_photo(caption, snapshot, cfg):
                 return True
             # photo send failed — fall through to text
 
-    # Text fallback
+    # Text fallback (uses caption as built above, including vision description if any)
     return notify.send(caption, cfg)
 
 

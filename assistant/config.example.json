@@ -14,6 +14,8 @@
     "telegram_chat_id": ""
   },
   "alerts": {
-    "cooldown_seconds": 120
+    "cooldown_seconds": 120,
+    "vision_caption": false,
+    "vision_model": "qwen2.5vl:7b"
   }
 }

@@ -28,6 +28,8 @@ DEFAULT_CONFIG: dict = {
     },
     "alerts": {
         "cooldown_seconds": 120,    # suppress repeat alerts for same camera within this window
+        "vision_caption": False,    # optional: run snapshot through a local vision model
+        "vision_model": "qwen2.5vl:7b",  # Ollama vision model; pull with: ollama pull qwen2.5vl:7b
     },
 }
 

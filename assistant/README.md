@@ -140,6 +140,48 @@ Alerts on **different** cameras are independent — a burst on "front" does not 
 Set to `0` to disable cooldown (deliver every event). Set higher (e.g. `300`) to
 reduce noise on busy cameras.
 
+**`alerts.vision_caption`** (default `false`) — optional local vision captioning for
+camera alerts. When enabled, the Frigate snapshot for each person/car alert is sent
+to a **local** Ollama vision model, which produces a one-line description (e.g.
+"a person in a dark jacket at the front door"). That description is appended to the
+alert caption before delivery.
+
+The snapshot never leaves the box — it goes only to your local Ollama process. This
+is the sovereignty-preserving path: on-device detection, on-device description, no
+cloud.
+
+**`alerts.vision_model`** (default `"qwen2.5vl:7b"`) — the Ollama vision model to
+use. Pull it once before enabling:
+
+```bash
+ollama pull qwen2.5vl:7b
+```
+
+Any Ollama-compatible vision model works (e.g. `llava:13b`, `moondream:1.8b`).
+Smaller models are faster; larger ones give better descriptions. Check what is
+available with `ollama list`.
+
+```json
+"alerts": {
+  "cooldown_seconds": 120,
+  "vision_caption": true,
+  "vision_model": "qwen2.5vl:7b"
+}
+```
+
+**Fail-soft guarantee:** if the vision model is slow, unavailable, or returns
+garbage, `vision.describe_image` returns `None` and the plain alert is sent
+unchanged. A failed or absent vision model never drops, delays past its timeout,
+or blocks an alert — the timeout is bounded at 60 s by default. Delivery semantics
+are identical to the no-vision path.
+
+**Latency caveat:** a vision model adds one local inference call per alert (after
+the snapshot fetch, before delivery). On a box with a GPU this is typically 1–5 s.
+On CPU only, a 7B vision model can take 30–90 s — longer than the alert itself.
+If latency matters more than captions, leave `vision_caption` at `false` (the
+default) or use a smaller model such as `moondream:1.8b`. The fail-soft design
+means a CPU-heavy model simply adds latency; it does not break alerting.
+
 ## Files
 - `assistant.py` — chat loop with memory + commands
 - `telegram_bot.py` — two-way Telegram bot (text your assistant from your phone)
@@ -148,6 +190,7 @@ reduce noise on busy cameras.
 - `alert_watcher.py` — Frigate → Telegram person/car alerts, with snapshot photo (cron, one-shot)
 - `frigate.py` — shared Frigate HTTP helper (auth header, fail-soft JSON/bytes fetch)
 - `notify.py` — Telegram sender (zero deps, fail-soft); `send()` for text, `send_photo()` for images
+- `vision.py` — optional local vision captioning via Ollama (zero deps, fail-soft)
 - `memory.py` — append-only local memory store
 - `llm.py` — minimal Ollama client (zero deps)
 - `config.py` — config loader with defaults
