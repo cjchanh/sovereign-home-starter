@@ -29,8 +29,8 @@ You (the agent) are helping the owner stand this up. Be concrete and hands-on.
 9. Optional: `./backup/backup.sh pi@host` to mirror to the Pi; `docs/HARDENING.md` to harden.
 
 ## Layout
-- `assistant/` — local chat assistant, sitrep, Telegram notify + camera alert watcher
-- `nvr/` — Frigate docker-compose + config + RTSP checker (local camera AI)
+- `assistant/` — chat + two-way Telegram bot, sitrep, notify + camera alert watcher (with snapshots)
+- `nvr/` — Frigate docker-compose + config + RTSP checker + TUNING.md (zones/masks/detectors)
 - `tailscale/` — wire the box into your tailnet and serve services privately
 - `backup/` — rsync the stack to a tailnet host (e.g. the Pi)
 - `docs/` — home-grade box-hardening checklist

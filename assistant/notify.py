@@ -64,3 +64,64 @@ def send(text: str, cfg: dict | None = None) -> bool:
         print(f"[notify] Telegram API error: {data}", file=sys.stderr)
         return False
     return True
+
+
+def send_photo(caption: str, image_bytes: bytes, cfg: dict | None = None) -> bool:
+    """Push a photo with caption to Telegram via sendPhoto (multipart/form-data).
+
+    Builds the multipart body by hand — no third-party deps.  Returns True on
+    success, False (no raise) on any failure, matching the fail-soft contract of
+    send().
+    """
+    token, chat = _creds(cfg)
+    if not token or not chat:
+        print(
+            "[notify] no Telegram token/chat set — skipping send_photo. "
+            "Set TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID, or the notify block in config.json.",
+            file=sys.stderr,
+        )
+        return False
+
+    boundary = "----SovereignHomeBoundary"
+    crlf = b"\r\n"
+
+    def _part_field(name: str, value: str) -> bytes:
+        return (
+            f"--{boundary}\r\n"
+            f'Content-Disposition: form-data; name="{name}"\r\n'
+            f"\r\n"
+            f"{value}\r\n"
+        ).encode("utf-8")
+
+    def _part_file(name: str, filename: str, data: bytes, content_type: str) -> bytes:
+        header = (
+            f"--{boundary}\r\n"
+            f'Content-Disposition: form-data; name="{name}"; filename="{filename}"\r\n'
+            f"Content-Type: {content_type}\r\n"
+            f"\r\n"
+        ).encode("utf-8")
+        return header + data + crlf
+
+    body = (
+        _part_field("chat_id", chat)
+        + _part_field("caption", caption)
+        + _part_file("photo", "snapshot.jpg", image_bytes, "image/jpeg")
+        + f"--{boundary}--\r\n".encode("utf-8")
+    )
+
+    req = urllib.request.Request(
+        f"https://api.telegram.org/bot{token}/sendPhoto",
+        data=body,
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        print(f"[notify] send_photo failed: {exc}", file=sys.stderr)
+        return False
+    if not (isinstance(data, dict) and data.get("ok")):
+        print(f"[notify] Telegram sendPhoto API error: {data}", file=sys.stderr)
+        return False
+    return True

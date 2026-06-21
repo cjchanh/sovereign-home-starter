@@ -12,6 +12,9 @@ Failure posture (it's a security alerter, so it errs toward NOT dropping alerts)
   newest-first, so we walk backward with `before`), not truncated to the newest 100.
 - The state file is written atomically; a corrupt state file is logged loudly and
   re-seeds the baseline rather than silently disarming.
+- For each alert, we attempt to attach the Frigate snapshot photo. If the photo
+  fetch fails, we fall back to a plain text alert. "Delivered" = photo OR text
+  fallback succeeded; only a total failure (both paths) holds the mark.
 
 Usage:
     python3 alert_watcher.py [--config config.json]
@@ -104,6 +107,42 @@ def _collect_new(nvr_url: str, after: float) -> list[dict]:
     return sorted(collected.values(), key=_start)
 
 
+def _fetch_snapshot(nvr_url: str, event_id: str) -> bytes | None:
+    """Fetch the Frigate snapshot for event_id. Returns bytes or None on failure."""
+    url = f"{nvr_url.rstrip('/')}/api/events/{event_id}/snapshot.jpg"
+    try:
+        with urllib.request.urlopen(url, timeout=10) as resp:
+            data = resp.read()
+        return data if data else None
+    except (urllib.error.URLError, TimeoutError, OSError):
+        return None
+
+
+def _send_alert(
+    nvr_url: str,
+    ev: dict,
+    cfg: dict,
+) -> bool:
+    """Deliver one alert — photo with caption, falling back to text.
+
+    Returns True if the alert was delivered by either path, False if both failed.
+    """
+    cam = ev.get("camera", "camera")
+    label = ev.get("label", "object")
+    caption = f"\U0001F6A8 {label} at {cam}"
+    event_id = ev.get("id")
+
+    if event_id:
+        snapshot = _fetch_snapshot(nvr_url, event_id)
+        if snapshot is not None:
+            if notify.send_photo(caption, snapshot, cfg):
+                return True
+            # photo send failed — fall through to text
+
+    # Text fallback
+    return notify.send(caption, cfg)
+
+
 def _seed_baseline(nvr_url: str) -> None:
     events = _events(nvr_url, 0.0)
     if events:
@@ -132,9 +171,7 @@ def main() -> None:
     for ev in events:
         start = _start(ev)
         if ev.get("label") in ALERT_LABELS:
-            cam = ev.get("camera", "camera")
-            label = ev.get("label", "object")
-            if notify.send(f"\U0001F6A8 {label} at {cam}", cfg):
+            if _send_alert(nvr_url, ev, cfg):
                 mark = max(mark, start)
                 sent += 1
             else:

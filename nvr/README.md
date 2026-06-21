@@ -30,3 +30,6 @@ CPU / RAM / disk — not an 8-camera hub.
 - Many cameras or high CPU? Add a Google Coral TPU or enable iGPU hardware
   acceleration (uncomment the `devices:` line in `docker-compose.yml`). See docs.
 - Recordings land in `./storage` (gitignored). Set `retain.days` to taste.
+
+## Advanced tuning
+Zones, motion masks, and faster detectors (OpenVINO/Coral): see **[TUNING.md](TUNING.md)**.

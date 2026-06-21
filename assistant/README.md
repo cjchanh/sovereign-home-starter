@@ -27,8 +27,38 @@ inside `assistant/` is simplest.
 If they're unset, notify is a no-op — nothing crashes, you just get no push.
 
 - `python3 sitrep.py --notify` — build the sitrep and push it to Telegram.
-- `python3 alert_watcher.py` — push a Telegram alert for each new person/car event
-  (one-shot; first run only seeds the baseline, so no blast of old events).
+- `python3 alert_watcher.py` — push a Telegram alert for each new person/car event,
+  with the Frigate snapshot photo attached. Falls back to a text alert if the photo
+  can't be fetched. (One-shot; first run only seeds the baseline.)
+
+## Two-way Telegram bot
+`telegram_bot.py` is a long-running bot so you can **text the assistant from your
+phone** and get replies — not just outbound push.
+
+```bash
+cd assistant
+python3 telegram_bot.py [--config config.json]
+```
+
+Requires the same `notify.telegram_bot_token` + `notify.telegram_chat_id` in
+`config.json`. With no credentials it prints a hint and exits 0.
+
+**Security:** only your configured chat id gets responses. Messages from any other
+chat are silently ignored.
+
+Supported commands (same as the chat REPL):
+- `/sitrep` — your daily brief
+- `/remember <text>` — save a note
+- `/todo <text>` — save a todo
+- anything else → answered by the local model
+
+### Run as a systemd service (optional)
+```bash
+cp telegram-bot.service.example ~/.config/systemd/user/telegram-bot.service
+# edit ExecStart path in the unit file
+systemctl --user daemon-reload
+systemctl --user enable --now telegram-bot
+```
 
 ## Cron (example)
 ```cron
@@ -53,9 +83,11 @@ it still runs.
 
 ## Files
 - `assistant.py` — chat loop with memory + commands
+- `telegram_bot.py` — two-way Telegram bot (text your assistant from your phone)
+- `telegram-bot.service.example` — systemd user unit for running the bot
 - `sitrep.py` — assembles the brief (system + cameras + todos); `--notify` pushes it
-- `alert_watcher.py` — Frigate → Telegram person/car alerts (cron, one-shot)
-- `notify.py` — Telegram sender (zero deps, fail-soft)
+- `alert_watcher.py` — Frigate → Telegram person/car alerts, with snapshot photo (cron, one-shot)
+- `notify.py` — Telegram sender (zero deps, fail-soft); `send()` for text, `send_photo()` for images
 - `memory.py` — append-only local memory store
 - `llm.py` — minimal Ollama client (zero deps)
 - `config.py` — config loader with defaults

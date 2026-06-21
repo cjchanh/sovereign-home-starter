@@ -1,0 +1,31 @@
+# Systemd user unit — two-way Telegram bot for the local assistant.
+#
+# Install:
+#   mkdir -p ~/.config/systemd/user
+#   cp assistant/telegram-bot.service.example ~/.config/systemd/user/telegram-bot.service
+#   # edit ExecStart below to use the correct full path
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now telegram-bot
+#
+# Check status:
+#   systemctl --user status telegram-bot
+#   journalctl --user -u telegram-bot -f
+
+[Unit]
+Description=Sovereign-home two-way Telegram assistant bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Adjust the path below to your actual checkout location.
+ExecStart=/usr/bin/python3 /home/user/sovereign-home-starter/assistant/telegram_bot.py \
+    --config /home/user/sovereign-home-starter/assistant/config.json
+Restart=on-failure
+RestartSec=10
+# Credentials can be set here instead of (or in addition to) config.json:
+# Environment=TELEGRAM_BOT_TOKEN=your-token-here
+# Environment=TELEGRAM_CHAT_ID=your-chat-id-here
+
+[Install]
+WantedBy=default.target

@@ -6,13 +6,14 @@ through setup.
 
 Four pieces, all running on **your** hardware — nothing phones home:
 
-1. **Private AI assistant** — a local model (Ollama) with memory. Remembers what you
-   tell it, answers day-to-day questions, and builds you a **sitrep**.
+1. **Private AI assistant** — a local model (Ollama) with memory. Chat in the terminal
+   **or text it from your phone** (two-way Telegram bot); it remembers what you tell it
+   and builds you a **sitrep**.
 2. **Daily sitrep, on your phone** — system health + recent camera events + your todos,
    summarized by the local model and pushed to **Telegram**. Cron it for a morning brief.
 3. **Local AI camera NVR + alerts** — Frigate records your RTSP cameras (Tapo *and*
-   Reolink) and does person/vehicle detection on-device, with **Telegram alerts** when
-   someone's at the gate. No 8-camera hub limit, no subscription.
+   Reolink) and does person/vehicle detection on-device, with **Telegram alerts (plus the
+   snapshot photo)** when someone's at the gate. No 8-camera hub limit, no subscription.
 4. **Tailscale wiring** — reach the assistant and cameras from anywhere, **privately**
    (tailnet-only, never public).
 
@@ -72,8 +73,8 @@ and ask it to walk you through — the `CLAUDE.md` here tells it how.
 ## What's where
 | Folder        | What it does                                                   |
 |---------------|----------------------------------------------------------------|
-| `assistant/`  | Local chat assistant, memory, sitrep, Telegram notify + alerts |
-| `nvr/`        | Frigate camera NVR (docker-compose + config + RTSP checker)    |
+| `assistant/`  | Chat + two-way Telegram bot, memory, sitrep, notify + alerts    |
+| `nvr/`        | Frigate camera NVR (compose + config + RTSP checker + TUNING.md)|
 | `tailscale/`  | Wire the box into your tailnet, serve services privately       |
 | `backup/`     | rsync the stack to your Pi over Tailscale                      |
 | `docs/`       | Box-hardening checklist (home-grade)                           |
