@@ -56,7 +56,7 @@ cat <<'NEXT'
 
 next steps (see README.md and each folder's README for detail):
   1. edit .env and nvr/config.yml with your camera IPs + credentials
-  2. cameras:   docker compose up -d frigate          # Frigate auth UI at http://localhost:8971
+  2. cameras:   docker compose up -d frigate          # Frigate auth UI at http://127.0.0.1:8971
   3. model:     ollama pull qwen2.5:7b
   4. assistant: cd assistant && python3 assistant.py  # or: docker compose run --rm assistant
   5. sitrep:    cd assistant && python3 sitrep.py     # add to cron for a daily brief
