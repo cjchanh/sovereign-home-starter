@@ -7,7 +7,10 @@ services:
     env_file:
       - .env
     volumes:
-      - ./nvr/config.yml:/config/config.yml:ro
+      # Writable (NOT :ro) — Frigate needs to migrate the config across versions and
+      # write its sqlite db/UI edits to /config. A read-only mount logs a migration
+      # error and breaks the built-in config editor.
+      - ./nvr/config.yml:/config/config.yml
       - ./nvr/storage:/media/frigate
       - type: tmpfs
         target: /tmp/cache
