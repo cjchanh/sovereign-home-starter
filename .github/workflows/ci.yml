@@ -31,7 +31,11 @@ jobs:
           done
 
       - name: Validate Compose config
-        run: docker compose config -q
+        run: |
+          # compose has `env_file: .env`; seed it from the example for validation
+          cp .env.example .env
+          docker compose config -q
+          rm -f .env
 
       - name: Parse config files (JSON + YAML)
         run: |
