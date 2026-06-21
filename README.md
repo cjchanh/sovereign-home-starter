@@ -58,7 +58,8 @@ cd sovereign-home-starter
 Then:
 1. Edit `.env` and `nvr/config.yml` with your camera IPs + RTSP credentials.
    (Test a camera first: `nvr/check-camera.sh 'rtsp://user:pass@IP:554/stream2'`.)
-2. **Cameras:** `cd nvr && docker compose up -d` → Frigate at http://localhost:5000
+2. **Cameras:** `docker compose up -d frigate` -> Frigate auth UI at
+   http://localhost:8971 (internal API remains loopback-only at http://localhost:5000)
 3. **Model:** `ollama pull qwen2.5:7b`
 4. **Assistant:** `cd assistant && python3 assistant.py`
 5. **Phone delivery:** add your Telegram bot token to `assistant/config.json`, then
@@ -71,10 +72,27 @@ Then:
 Each folder has its own README with detail. Using Claude Code? Just open this repo
 and ask it to walk you through — the `CLAUDE.md` here tells it how.
 
+## Docker Compose path
+The top-level compose file is the easiest way to run the service layer from the
+repo root:
+
+```bash
+./setup.sh
+docker compose up -d frigate                  # camera NVR
+docker compose run --rm assistant             # interactive local assistant
+docker compose --profile phone up -d telegram-bot
+docker compose --profile jobs run --rm alert-watcher
+```
+
+Compose uses the same `.env` that `setup.sh` creates. The assistant container
+talks to Ollama on the host via `host.docker.internal` and talks to Frigate over
+the private Compose network.
+
 ## Verify it works
 - `./doctor.sh` — pokes your **live** services (Ollama + model, Frigate, Tailscale,
   and a real Telegram test message) and tells you exactly what's wired and what isn't.
 - `python3 -m unittest discover -s tests` — offline logic tests (no services needed).
+- `docker compose config` — validates the top-level Compose stack.
 
 ## What's where
 | Folder        | What it does                                                   |

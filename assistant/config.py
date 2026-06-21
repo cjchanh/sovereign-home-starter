@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -31,20 +32,38 @@ DEFAULT_CONFIG: dict = {
 }
 
 
+def _apply_env_overrides(cfg: dict) -> dict:
+    """Apply container-friendly overrides without making config files secret-bearing."""
+    model = os.environ.get("SOVEREIGN_HOME_MODEL")
+    ollama_url = os.environ.get("SOVEREIGN_HOME_OLLAMA_URL")
+    memory_path = os.environ.get("SOVEREIGN_HOME_MEMORY_PATH")
+    nvr_url = os.environ.get("SOVEREIGN_HOME_NVR_URL")
+
+    if model:
+        cfg["model"] = model
+    if ollama_url:
+        cfg["ollama_url"] = ollama_url
+    if memory_path:
+        cfg["memory_path"] = memory_path
+    if nvr_url:
+        cfg["sitrep"]["nvr_url"] = nvr_url
+    return cfg
+
+
 def load_config(path: str | None = None) -> dict:
     cfg = copy.deepcopy(DEFAULT_CONFIG)
     if not path:
-        return cfg
+        return _apply_env_overrides(cfg)
     p = Path(path).expanduser()
     if not p.exists():
-        return cfg
+        return _apply_env_overrides(cfg)
     try:
         user = json.loads(p.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as exc:
         print(f"[!] Ignoring bad config {p}: {exc}. Using defaults.", file=sys.stderr)
-        return cfg
+        return _apply_env_overrides(cfg)
     if not isinstance(user, dict):
-        return cfg
+        return _apply_env_overrides(cfg)
     # "sitrep" and "alerts" are deep-merged; every other key replaces wholesale.
     for key, value in user.items():
         if key in ("sitrep", "alerts"):
@@ -53,4 +72,4 @@ def load_config(path: str | None = None) -> dict:
             # ignore a non-dict override; keep the defaults
         else:
             cfg[key] = value
-    return cfg
+    return _apply_env_overrides(cfg)

@@ -56,9 +56,9 @@ cat <<'NEXT'
 
 next steps (see README.md and each folder's README for detail):
   1. edit .env and nvr/config.yml with your camera IPs + credentials
-  2. cameras:   cd nvr && docker compose up -d        # Frigate at http://localhost:5000
+  2. cameras:   docker compose up -d frigate          # Frigate auth UI at http://localhost:8971
   3. model:     ollama pull qwen2.5:7b
-  4. assistant: cd assistant && python3 assistant.py
+  4. assistant: cd assistant && python3 assistant.py  # or: docker compose run --rm assistant
   5. sitrep:    cd assistant && python3 sitrep.py     # add to cron for a daily brief
   6. remote:    ./tailscale/setup.sh                  # reach it from your phone, tailnet-only
   7. alerts:    add a Telegram bot token to assistant/config.json, then
@@ -68,4 +68,5 @@ next steps (see README.md and each folder's README for detail):
   --- verify ---
   ./doctor.sh                                         # check the live services
   python3 -m unittest discover -s tests               # offline logic tests
+  docker compose config                               # compose syntax / wiring check
 NEXT

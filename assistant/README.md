@@ -16,6 +16,16 @@ python3 sitrep.py             # print a sitrep on its own
 `sitrep.py` runs from anywhere via its full path; for the chat REPL, running from
 inside `assistant/` is simplest.
 
+From the repo root, the Docker path is:
+
+```bash
+docker compose run --rm assistant
+```
+
+The container uses `SOVEREIGN_HOME_OLLAMA_URL`, `SOVEREIGN_HOME_NVR_URL`, and
+`SOVEREIGN_HOME_MEMORY_PATH` from the Compose environment so it can talk to the
+host Ollama process and the Frigate service correctly.
+
 ## Notifications (Telegram) — sitrep to your phone + camera alerts
 1. In Telegram, message **@BotFather** → `/newbot` → copy the **bot token**.
 2. Message your new bot once, then open

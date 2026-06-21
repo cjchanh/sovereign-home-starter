@@ -1,0 +1,84 @@
+services:
+  frigate:
+    container_name: frigate
+    image: ghcr.io/blakeblackshear/frigate:stable
+    restart: unless-stopped
+    shm_size: "256mb"
+    env_file:
+      - .env
+    volumes:
+      - ./nvr/config.yml:/config/config.yml:ro
+      - ./nvr/storage:/media/frigate
+      - type: tmpfs
+        target: /tmp/cache
+        tmpfs:
+          size: 1000000000
+    ports:
+      - "127.0.0.1:8971:8971"
+      - "127.0.0.1:5000:5000"
+      - "127.0.0.1:8554:8554"
+      - "127.0.0.1:8555:8555/tcp"
+      - "127.0.0.1:8555:8555/udp"
+
+  assistant:
+    build:
+      context: .
+      dockerfile: assistant/Dockerfile
+    image: sovereign-home-assistant:local
+    profiles: ["assistant"]
+    stdin_open: true
+    tty: true
+    env_file:
+      - .env
+    environment:
+      SOVEREIGN_HOME_OLLAMA_URL: ${SOVEREIGN_HOME_OLLAMA_URL:-http://host.docker.internal:11434}
+      SOVEREIGN_HOME_NVR_URL: http://frigate:5000
+      SOVEREIGN_HOME_MEMORY_PATH: /state/memory.jsonl
+    volumes:
+      - assistant-state:/state
+    depends_on:
+      - frigate
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["python3", "assistant.py"]
+
+  telegram-bot:
+    build:
+      context: .
+      dockerfile: assistant/Dockerfile
+    image: sovereign-home-assistant:local
+    profiles: ["phone"]
+    restart: on-failure
+    env_file:
+      - .env
+    environment:
+      SOVEREIGN_HOME_OLLAMA_URL: ${SOVEREIGN_HOME_OLLAMA_URL:-http://host.docker.internal:11434}
+      SOVEREIGN_HOME_NVR_URL: http://frigate:5000
+      SOVEREIGN_HOME_MEMORY_PATH: /state/memory.jsonl
+    volumes:
+      - assistant-state:/state
+    depends_on:
+      - frigate
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["python3", "telegram_bot.py"]
+
+  alert-watcher:
+    build:
+      context: .
+      dockerfile: assistant/Dockerfile
+    image: sovereign-home-assistant:local
+    profiles: ["jobs"]
+    env_file:
+      - .env
+    environment:
+      SOVEREIGN_HOME_NVR_URL: http://frigate:5000
+      SOVEREIGN_HOME_MEMORY_PATH: /state/memory.jsonl
+    volumes:
+      - assistant-state:/state
+    depends_on:
+      - frigate
+    command: ["python3", "alert_watcher.py"]
+
+volumes:
+  assistant-state:

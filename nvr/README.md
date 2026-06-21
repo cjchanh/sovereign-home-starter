@@ -8,7 +8,13 @@ person/vehicle detection **on this machine** — no cloud, no subscription.
 cp config.example.yml config.yml      # setup.sh does this
 # edit config.yml: set each camera's IP + RTSP path
 # (confirm a camera works first: ./check-camera.sh 'rtsp://user:pass@IP:554/stream2')
-docker compose up -d                  # UI at http://localhost:5000
+docker compose up -d                  # auth UI at http://localhost:8971
+```
+
+From the repo root, the equivalent command is:
+
+```bash
+docker compose up -d frigate
 ```
 
 ## Cameras (Tapo + most RTSP cams)

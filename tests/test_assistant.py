@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import sys
 import tempfile
 import time
@@ -110,6 +111,33 @@ class ConfigTests(unittest.TestCase):
         Path(p).write_text(json.dumps({"alerts": {"cooldown_seconds": 30}}))
         cfg = config.load_config(p)
         self.assertEqual(cfg["alerts"]["cooldown_seconds"], 30)
+
+    def test_env_overrides_for_compose(self):
+        old = {
+            k: os.environ.get(k)
+            for k in (
+                "SOVEREIGN_HOME_MODEL",
+                "SOVEREIGN_HOME_OLLAMA_URL",
+                "SOVEREIGN_HOME_MEMORY_PATH",
+                "SOVEREIGN_HOME_NVR_URL",
+            )
+        }
+        try:
+            os.environ["SOVEREIGN_HOME_MODEL"] = "qwen2.5:3b"
+            os.environ["SOVEREIGN_HOME_OLLAMA_URL"] = "http://host.docker.internal:11434"
+            os.environ["SOVEREIGN_HOME_MEMORY_PATH"] = "/state/memory.jsonl"
+            os.environ["SOVEREIGN_HOME_NVR_URL"] = "http://frigate:5000"
+            cfg = config.load_config(None)
+        finally:
+            for key, value in old.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+        self.assertEqual(cfg["model"], "qwen2.5:3b")
+        self.assertEqual(cfg["ollama_url"], "http://host.docker.internal:11434")
+        self.assertEqual(cfg["memory_path"], "/state/memory.jsonl")
+        self.assertEqual(cfg["sitrep"]["nvr_url"], "http://frigate:5000")
 
 
 class NotifyTests(unittest.TestCase):
