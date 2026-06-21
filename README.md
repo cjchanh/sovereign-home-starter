@@ -64,6 +64,11 @@ Then:
 Each folder has its own README with detail. Using Claude Code? Just open this repo
 and ask it to walk you through — the `CLAUDE.md` here tells it how.
 
+## Verify it works
+- `./doctor.sh` — pokes your **live** services (Ollama + model, Frigate, Tailscale,
+  and a real Telegram test message) and tells you exactly what's wired and what isn't.
+- `python3 -m unittest discover -s tests` — offline logic tests (no services needed).
+
 ## What's where
 | Folder        | What it does                                                   |
 |---------------|----------------------------------------------------------------|
@@ -72,7 +77,10 @@ and ask it to walk you through — the `CLAUDE.md` here tells it how.
 | `tailscale/`  | Wire the box into your tailnet, serve services privately       |
 | `backup/`     | rsync the stack to your Pi over Tailscale                      |
 | `docs/`       | Box-hardening checklist (home-grade)                           |
+| `tests/`      | Offline smoke tests (`python3 -m unittest discover -s tests`)   |
 | `lint/`       | Optional mildoc-lint for compliance docs                       |
+
+(`doctor.sh` and `setup.sh` live at the root.)
 
 ## Privacy + safety
 - Everything runs locally. The assistant uses a local model; detection is on-device.

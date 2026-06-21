@@ -58,4 +58,7 @@ next steps (see README.md and each folder's README for detail):
                 python3 assistant/sitrep.py --notify  # + cron assistant/alert_watcher.py
   8. backup:    ./backup/backup.sh pi@your-pi         # mirror to your tailnet Pi
   9. harden:    see docs/HARDENING.md
+  --- verify ---
+  ./doctor.sh                                         # check the live services
+  python3 -m unittest discover -s tests               # offline logic tests
 NEXT
