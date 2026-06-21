@@ -24,11 +24,16 @@ You (the agent) are helping the owner stand this up. Be concrete and hands-on.
 5. `cd assistant && python3 assistant.py` — talk to the assistant.
 6. `python3 assistant/sitrep.py` — generate a brief; add to cron for a daily one.
 7. `./tailscale/setup.sh` — reach it all from your phone, tailnet-only.
+8. Optional: add a Telegram bot token to `assistant/config.json` for phone delivery —
+   `sitrep.py --notify` (sitrep) and cron `alert_watcher.py` (person/car alerts).
+9. Optional: `./backup/backup.sh pi@host` to mirror to the Pi; `docs/HARDENING.md` to harden.
 
 ## Layout
-- `assistant/` — local chat assistant + sitrep (Python, no third-party deps)
-- `nvr/` — Frigate docker-compose + config (local camera AI)
+- `assistant/` — local chat assistant, sitrep, Telegram notify + camera alert watcher
+- `nvr/` — Frigate docker-compose + config + RTSP checker (local camera AI)
 - `tailscale/` — wire the box into your tailnet and serve services privately
-- `lint/` — optional: lint your own docs/configs with mildoc-lint
+- `backup/` — rsync the stack to a tailnet host (e.g. the Pi)
+- `docs/` — home-grade box-hardening checklist
+- `lint/` — optional: compliance-doc linting with mildoc-lint
 
 Keep it simple. This is one person's private home stack, not a production fleet.

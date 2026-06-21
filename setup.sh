@@ -54,4 +54,8 @@ next steps (see README.md and each folder's README for detail):
   4. assistant: cd assistant && python3 assistant.py
   5. sitrep:    cd assistant && python3 sitrep.py     # add to cron for a daily brief
   6. remote:    ./tailscale/setup.sh                  # reach it from your phone, tailnet-only
+  7. alerts:    add a Telegram bot token to assistant/config.json, then
+                python3 assistant/sitrep.py --notify  # + cron assistant/alert_watcher.py
+  8. backup:    ./backup/backup.sh pi@your-pi         # mirror to your tailnet Pi
+  9. harden:    see docs/HARDENING.md
 NEXT

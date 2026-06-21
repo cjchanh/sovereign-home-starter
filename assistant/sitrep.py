@@ -105,9 +105,17 @@ def main() -> None:
     parser.add_argument(
         "--config", default=str(Path(__file__).parent / "config.json")
     )
+    parser.add_argument(
+        "--notify", action="store_true", help="also push the sitrep to Telegram"
+    )
     args = parser.parse_args()
     cfg = cfg_mod.load_config(args.config)
-    print(build_sitrep(cfg))
+    text = build_sitrep(cfg)
+    print(text)
+    if args.notify:
+        import notify
+
+        notify.send("Morning sitrep\n\n" + text, cfg)
 
 
 if __name__ == "__main__":

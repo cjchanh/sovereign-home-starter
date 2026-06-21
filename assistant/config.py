@@ -20,6 +20,10 @@ DEFAULT_CONFIG: dict = {
         "nvr_url": "http://localhost:5000",
         "nvr_hours": 24,
     },
+    "notify": {
+        "telegram_bot_token": "",
+        "telegram_chat_id": "",
+    },
 }
 
 
