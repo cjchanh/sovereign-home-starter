@@ -22,6 +22,6 @@ Tailscale ACL grant can further restrict who reaches this node.
 
 To stop serving: `sudo tailscale serve reset`.
 
-The `tailscale serve` CLI has changed across versions — if `--bg 5000` doesn't work
+The `tailscale serve` CLI has changed across versions — if `--bg 8971` doesn't work
 on your version, run `tailscale serve --help` and use the equivalent form (older
-versions use `tailscale serve https / http://localhost:5000`).
+versions use `tailscale serve https / http://localhost:8971`).

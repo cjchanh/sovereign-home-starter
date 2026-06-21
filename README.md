@@ -51,12 +51,12 @@ Plus a **box-hardening checklist**, a **backup-to-your-Pi** script, and optional
 
 ## Quick start
 ```bash
-git clone <this-repo> sovereign-home-starter
+git clone https://github.com/cjchanh/sovereign-home-starter.git
 cd sovereign-home-starter
 ./setup.sh                       # checks prereqs, seeds config files
 ```
 Then:
-1. Edit `.env` and `nvr/config.yml` with your camera IPs + RTSP credentials.
+1. Edit `.env` and `nvr/config/config.yml` with your camera IPs + RTSP credentials.
    (Test a camera first: `nvr/check-camera.sh 'rtsp://user:pass@IP:554/stream2'`.)
 2. **Cameras:** `docker compose up -d frigate` -> Frigate auth UI at
    http://127.0.0.1:8971 (internal API remains loopback-only at http://127.0.0.1:5000)
@@ -89,7 +89,7 @@ talks to Ollama on the host via `host.docker.internal` and talks to Frigate over
 the private Compose network.
 
 **Two things to know:**
-- **Run `./setup.sh` first** so `nvr/config.yml` exists before `docker compose up`
+- **Run `./setup.sh` first** so `nvr/config/config.yml` exists before `docker compose up`
   (a missing bind source would otherwise be created as an empty directory).
 - For the containers to reach Ollama on the host, start Ollama bound to all
   interfaces: `OLLAMA_HOST=0.0.0.0 ollama serve` (the default 127.0.0.1 isn't
@@ -121,7 +121,7 @@ the private Compose network.
 - **The one thing that leaves the box** is opt-in Telegram (sitrep/alerts/bot) — those
   messages transit Telegram's servers. Disable Telegram for a fully-local setup; the
   alerts still work over your tailnet.
-- Secrets (`.env`, `nvr/config.yml`, `assistant/config.json`) are gitignored, and
+- Secrets (`.env`, `nvr/config/config.yml`, `assistant/config.json`) are gitignored, and
   `setup.sh` `chmod 600`s them; your assistant notes (`~/.sovereign-home/`) are owner-only.
 - Remote access is **tailnet only**, and via Frigate's *authenticated* port (8971) —
   never the unauthenticated :5000, which stays bound to localhost.

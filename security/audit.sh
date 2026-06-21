@@ -101,7 +101,7 @@ echo
 echo "5. Secret file permissions (must be 600)"
 secret_files=(
   "$here/.env"
-  "$here/nvr/config.yml"
+  "$here/nvr/config/config.yml"
   "$here/assistant/config.json"
 )
 any_secret_found=0
@@ -124,10 +124,10 @@ fi
 echo
 
 # -- 6. Frigate ports bound to loopback ---------------------------------------
-echo "6. Frigate port bindings (nvr/docker-compose.yml)"
-compose_file="$here/nvr/docker-compose.yml"
+echo "6. Frigate port bindings (docker-compose.yml)"
+compose_file="$here/docker-compose.yml"
 if [ ! -f "$compose_file" ]; then
-  _skip "nvr/docker-compose.yml not found"
+  _skip "docker-compose.yml not found"
 else
   # published port lines (- "5000:5000") that are NOT prefixed with 127.0.0.1
   bad_ports="$(grep -E '^\s*-\s+"?[0-9]' "$compose_file" | grep -v '127\.0\.0\.1' || true)"

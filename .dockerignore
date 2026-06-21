@@ -1,0 +1,11 @@
+.git
+.env
+assistant/config.json
+nvr/config.yml
+nvr/config/
+nvr/storage/
+.sovereign-home/
+**/__pycache__/
+**/*.pyc
+.DS_Store
+__MACOSX/

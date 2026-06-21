@@ -163,7 +163,7 @@ def main() -> None:
         )
         sys.exit(0)
 
-    print(f"[telegram_bot] listening (chat_id={chat_id}) …", flush=True)
+    print("[telegram_bot] listening …", flush=True)
     offset = 0
     backoff_delay: float = 0.0  # 0 means "no failure yet; don't sleep"
 
@@ -199,7 +199,7 @@ def main() -> None:
             reply = _handle(text, cfg)
             if not notify.send(reply, cfg):
                 print(
-                    f"[telegram_bot] failed to send reply for: {text!r}",
+                    "[telegram_bot] failed to send reply",
                     file=sys.stderr,
                 )
 

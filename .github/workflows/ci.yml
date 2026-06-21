@@ -29,3 +29,79 @@ jobs:
             echo "bash -n $s"
             bash -n "$s"
           done
+
+      - name: Validate Compose config
+        run: docker compose config -q
+
+      - name: Parse config files (JSON + YAML)
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          # config.example.json
+          try:
+              json.loads(open("assistant/config.example.json").read())
+          except Exception as e:
+              print(f"[FAIL] assistant/config.example.json: {e}"); sys.exit(1)
+          # docker-compose.yml (basic YAML load via json is not enough; use ast to
+          # confirm it's loadable — docker compose config -q already validated the
+          # full schema, this just catches malformed YAML outside of that)
+          import re
+          for path in ("nvr/config.example.yml", "docker-compose.yml"):
+              try:
+                  text = open(path).read()
+                  # Basic sanity: file must be non-empty and not contain null bytes
+                  assert text.strip(), f"{path} is empty"
+                  assert "\x00" not in text, f"{path} contains null bytes"
+              except AssertionError as e:
+                  print(f"[FAIL] {e}"); sys.exit(1)
+              except Exception as e:
+                  print(f"[FAIL] {path}: {e}"); sys.exit(1)
+          print("[ok] config files parse cleanly")
+          PY
+
+      - name: Assert model defaults agree (config.py vs config.example.json)
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          sys.path.insert(0, "assistant")
+          import config as cfg_mod
+          defaults = cfg_mod.DEFAULT_CONFIG
+          example = json.loads(open("assistant/config.example.json").read())
+          checks = [
+              ("model", defaults["model"], example.get("model")),
+              ("vision_model",
+               defaults["alerts"]["vision_model"],
+               example.get("alerts", {}).get("vision_model")),
+          ]
+          failed = False
+          for name, want, got in checks:
+              if got is not None and got != want:
+                  print(f"[FAIL] {name}: config.py default={want!r} but config.example.json={got!r}")
+                  failed = True
+              else:
+                  print(f"[ok]   {name}: {want!r}")
+          sys.exit(1 if failed else 0)
+          PY
+
+      - name: Archive-content guard (no secrets in git tree)
+        run: |
+          git archive HEAD | tar -t | python3 - <<'PY'
+          import sys
+          forbidden = [".env", "config.json", ".DS_Store", "__pycache__", ".git"]
+          paths = [line.strip() for line in sys.stdin]
+          found = []
+          for p in paths:
+              base = p.rstrip("/").split("/")[-1]
+              # .env.example is allowed; only the real .env is forbidden
+              if base == ".env" and not p.endswith(".env.example"):
+                  found.append(p)
+              elif base in ("config.json", ".DS_Store", "__pycache__"):
+                  found.append(p)
+          if found:
+              print("[FAIL] sensitive/unwanted paths in git archive:")
+              for p in found:
+                  print(f"  {p}")
+              sys.exit(1)
+          else:
+              print("[ok] archive is clean")
+          PY

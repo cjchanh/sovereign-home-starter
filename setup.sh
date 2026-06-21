@@ -44,18 +44,20 @@ seed() {
 echo "seeding config files..."
 seed "$here/.env.example"                 "$here/.env"
 seed "$here/assistant/config.example.json" "$here/assistant/config.json"
-seed "$here/nvr/config.example.yml"        "$here/nvr/config.yml"
+# Frigate config lives in a directory so its sqlite db + generated state persist.
+mkdir -p "$here/nvr/config"
+seed "$here/nvr/config.example.yml"       "$here/nvr/config/config.yml"
 
 # Lock down the secret-bearing files so they aren't world/group readable. The
 # audit (security/audit.sh) CHECKS for 600 — this is what actually SETS it.
-for s in "$here/.env" "$here/assistant/config.json" "$here/nvr/config.yml"; do
+for s in "$here/.env" "$here/assistant/config.json" "$here/nvr/config/config.yml"; do
   [ -f "$s" ] && chmod 600 "$s" && echo "  chmod 600: $s"
 done
 
 cat <<'NEXT'
 
 next steps (see README.md and each folder's README for detail):
-  1. edit .env and nvr/config.yml with your camera IPs + credentials
+  1. edit .env and nvr/config/config.yml with your camera IPs + credentials
   2. cameras:   docker compose up -d frigate          # Frigate auth UI at http://127.0.0.1:8971
   3. model:     ollama pull qwen3.5:9b
   4. assistant: cd assistant && python3 assistant.py  # or: docker compose run --rm assistant

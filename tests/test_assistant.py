@@ -233,6 +233,40 @@ class NotifyTests(unittest.TestCase):
         finally:
             urllib.request.urlopen = orig
 
+    def test_send_photo_caption_truncated_to_1024_utf16(self):
+        """send_photo captions are limited to 1024 UTF-16 code units (not 4096)."""
+        # Each emoji is 2 UTF-16 code units; 600 of them = 1200 units > 1024.
+        long_caption = "🚨" * 600
+        self.assertGreater(notify._u16_len(long_caption), notify._TELEGRAM_CAPTION_MAX)
+
+        captured: dict = {}
+
+        def fake_urlopen(req, timeout=0):
+            # The caption appears in the multipart body; extract it via a simple search.
+            body = req.data.decode("utf-8", errors="replace")
+            # Find the caption field value between the blank line and the next boundary.
+            import re
+            m = re.search(r'name="caption"\r\n\r\n(.*?)\r\n--', body, re.DOTALL)
+            if m:
+                captured["caption"] = m.group(1)
+            return _Resp(b'{"ok":true}')
+
+        orig = urllib.request.urlopen
+        urllib.request.urlopen = fake_urlopen
+        try:
+            result = notify.send_photo(
+                long_caption,
+                b"\xff\xd8\xff\xe0",
+                {"notify": {"telegram_bot_token": "t", "telegram_chat_id": "1"}},
+            )
+        finally:
+            urllib.request.urlopen = orig
+
+        self.assertTrue(result)
+        self.assertIn("caption", captured)
+        sent_u16 = notify._u16_len(captured["caption"])
+        self.assertLessEqual(sent_u16, notify._TELEGRAM_CAPTION_MAX)
+
 
 class FrigateAuthTests(unittest.TestCase):
     """FIX 1: Frigate API key header injection tests."""

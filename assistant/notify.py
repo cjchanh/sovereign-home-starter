@@ -13,7 +13,8 @@ import sys
 import urllib.error
 import urllib.request
 
-_TELEGRAM_MAX = 4096  # Telegram counts this in UTF-16 code units, not code points
+_TELEGRAM_MAX = 4096         # Telegram message text limit in UTF-16 code units
+_TELEGRAM_CAPTION_MAX = 1024  # Telegram sendPhoto caption limit in UTF-16 code units
 
 
 def _u16_len(s: str) -> int:
@@ -29,6 +30,17 @@ def _creds(cfg: dict | None) -> tuple[str | None, str | None]:
     return (token or None), (chat or None)
 
 
+def _truncate_utf16(text: str, max_units: int) -> str:
+    """Truncate *text* so it fits within *max_units* UTF-16 code units."""
+    if _u16_len(text) <= max_units:
+        return text
+    marker = "\n…(truncated)"
+    budget = max_units - _u16_len(marker)
+    while text and _u16_len(text) > budget:
+        text = text[:-1]
+    return text + marker
+
+
 def send(text: str, cfg: dict | None = None) -> bool:
     """Push one message to Telegram. Returns True on success, False (no raise) otherwise."""
     token, chat = _creds(cfg)
@@ -39,12 +51,7 @@ def send(text: str, cfg: dict | None = None) -> bool:
             file=sys.stderr,
         )
         return False
-    if _u16_len(text) > _TELEGRAM_MAX:
-        marker = "\n…(truncated)"
-        budget = _TELEGRAM_MAX - _u16_len(marker)
-        while text and _u16_len(text) > budget:
-            text = text[:-1]
-        text += marker
+    text = _truncate_utf16(text, _TELEGRAM_MAX)
     payload = json.dumps(
         {"chat_id": chat, "text": text, "disable_web_page_preview": True}
     ).encode("utf-8")
@@ -71,7 +78,8 @@ def send_photo(caption: str, image_bytes: bytes, cfg: dict | None = None) -> boo
 
     Builds the multipart body by hand — no third-party deps.  Returns True on
     success, False (no raise) on any failure, matching the fail-soft contract of
-    send().
+    send(). Caption is truncated to the Telegram photo-caption limit (1024 UTF-16
+    code units) before sending.
     """
     token, chat = _creds(cfg)
     if not token or not chat:
@@ -81,6 +89,9 @@ def send_photo(caption: str, image_bytes: bytes, cfg: dict | None = None) -> boo
             file=sys.stderr,
         )
         return False
+
+    # Telegram photo captions are limited to 1024 UTF-16 code units (not 4096).
+    caption = _truncate_utf16(caption, _TELEGRAM_CAPTION_MAX)
 
     boundary = "----SovereignHomeBoundary"
     crlf = b"\r\n"

@@ -1,16 +1,15 @@
 services:
   frigate:
     container_name: frigate
-    image: ghcr.io/blakeblackshear/frigate:stable
+    image: ghcr.io/blakeblackshear/frigate:0.17.1
     restart: unless-stopped
     shm_size: "256mb"
     env_file:
       - .env
     volumes:
-      # Writable (NOT :ro) — Frigate needs to migrate the config across versions and
-      # write its sqlite db/UI edits to /config. A read-only mount logs a migration
-      # error and breaks the built-in config editor.
-      - ./nvr/config.yml:/config/config.yml
+      # Directory mount (not a single file) so Frigate can write its sqlite db,
+      # UI edits, and config migrations into /config across container recreations.
+      - ./nvr/config:/config
       - ./nvr/storage:/media/frigate
       - type: tmpfs
         target: /tmp/cache
@@ -75,6 +74,7 @@ services:
     env_file:
       - .env
     environment:
+      SOVEREIGN_HOME_OLLAMA_URL: ${SOVEREIGN_HOME_OLLAMA_URL:-http://host.docker.internal:11434}
       SOVEREIGN_HOME_NVR_URL: http://frigate:5000
       SOVEREIGN_HOME_MEMORY_PATH: /state/memory.jsonl
       # Persist the alert high-water mark + cooldown on the volume, or the
@@ -84,6 +84,8 @@ services:
       - assistant-state:/state
     depends_on:
       - frigate
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: ["python3", "alert_watcher.py"]
 
 volumes:

@@ -4,7 +4,7 @@ ENV PYTHONUNBUFFERED=1 \
     SOVEREIGN_HOME_MEMORY_PATH=/state/memory.jsonl
 
 WORKDIR /app
-COPY assistant/ /app/
+COPY assistant/*.py /app/
 
 RUN useradd --system --uid 10001 --create-home assistant \
     && mkdir -p /state \

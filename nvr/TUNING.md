@@ -2,7 +2,7 @@
 
 Copy-paste snippets for common tuning tasks. All YAML is valid for Frigate 0.14+
 (including 0.17). Do NOT paste these into `config.example.yml` — that file is the
-minimal working starting point. Put them in your live `config.yml`.
+minimal working starting point. Put them in your live `nvr/config/config.yml`.
 
 ---
 
@@ -19,10 +19,13 @@ including the public footpath or road across the street. A zone lets you say
 1. Open the Frigate UI at `http://localhost:5000`.
 2. Go to **Cameras → your camera → Debug**.
 3. Click **Bounding Box** to overlay the frame, then use the **Zone editor**
-   (or draw a polygon manually) to capture pixel coordinates.
-   Coordinates are listed as comma-separated `x,y` pairs, relative to the
-   frame's **detect** resolution (the substream width × height you set in
-   `detect:`).
+   to draw a polygon — it emits the coordinates directly in the correct format.
+
+**Important:** Frigate zone coordinates are **normalized** (0.0 – 1.0), NOT
+pixel values. `0,0` is the top-left corner; `1,1` is the bottom-right corner.
+The UI Zone editor outputs these values for you — copy them directly. If you
+measure pixel positions manually, divide x by the frame width and y by the
+frame height.
 
 ### Snippet
 
@@ -34,8 +37,8 @@ cameras:
     zones:
       driveway:
         # Four-corner polygon. Replace with coordinates from the Frigate UI.
-        # Format: x1,y1,x2,y2,x3,y3,x4,y4  (pixel coords, detect resolution)
-        coordinates: 50,480,320,240,480,240,640,480
+        # Format: x1,y1,x2,y2,x3,y3,x4,y4  (normalized 0–1, not pixels)
+        coordinates: 0.078,1.0,0.5,0.5,0.75,0.5,1.0,1.0
         objects:
           # Optional: only objects in this list count for this zone.
           - person
@@ -60,6 +63,9 @@ A motion mask tells Frigate's motion detector to ignore movement in a region of
 the frame. This cuts wasted CPU cycles and reduces false-positive detections from
 trees, flags, or a road in the background.
 
+**Important:** motion mask coordinates are also **normalized** (0.0 – 1.0), the
+same as zone coordinates. Use the Frigate UI Zone/mask editor to capture them.
+
 ```yaml
 cameras:
   front_door:
@@ -67,10 +73,10 @@ cameras:
 
     motion:
       # List of polygons to mask out of motion detection.
-      # Same coordinate format as zones (pixel coords at detect resolution).
+      # Coordinates are normalized 0–1 (x from left, y from top).
       mask:
-        - 0,0,160,0,160,120,0,120       # top-left corner — e.g. a waving flag
-        - 480,360,640,360,640,480,480,480  # bottom-right corner — e.g. a busy road
+        - 0.0,0.0,0.25,0.0,0.25,0.25,0.0,0.25     # top-left corner — e.g. a waving flag
+        - 0.75,0.75,1.0,0.75,1.0,1.0,0.75,1.0     # bottom-right corner — e.g. a busy road
 ```
 
 Tips:

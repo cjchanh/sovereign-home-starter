@@ -5,24 +5,19 @@ person/vehicle detection **on this machine** — no cloud, no subscription.
 
 ## Bring it up
 ```bash
-cp config.example.yml config.yml      # setup.sh does this
-# edit config.yml: set each camera's IP + RTSP path
-# (confirm a camera works first: ./check-camera.sh 'rtsp://user:pass@IP:554/stream2')
-docker compose up -d                  # auth UI at http://localhost:8971
-```
-
-From the repo root, the equivalent command is:
-
-```bash
-docker compose up -d frigate
+# From the repo root (setup.sh does the config seeding):
+./setup.sh
+# edit nvr/config/config.yml: set each camera's IP + RTSP path
+# (confirm a camera works first: ./nvr/check-camera.sh 'rtsp://user:pass@IP:554/stream2')
+docker compose up -d frigate     # auth UI at http://localhost:8971
 ```
 
 ## Cameras (Tapo + most RTSP cams)
 Tapo: app -> camera -> **Advanced Settings -> Camera Account** -> create a
 user/password, enable RTSP. The URL is `rtsp://<user>:<pass>@<camera-ip>:554/stream1`
 (HD) or `/stream2` (SD). Put the password in `../.env` as `FRIGATE_RTSP_PASSWORD`
-and reference it in `config.yml` as `{FRIGATE_RTSP_PASSWORD}` (already wired in the
-example).
+and reference it in `nvr/config/config.yml` as `{FRIGATE_RTSP_PASSWORD}` (already
+wired in the example).
 
 > **Use only letters and digits in the camera-account password.** Frigate doesn't
 > URL-encode it, so special characters (`@ : / # ? % &`) will break the stream.

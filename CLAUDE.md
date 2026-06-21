@@ -11,15 +11,15 @@ You (the agent) are helping the owner stand this up. Be concrete and hands-on.
   The assistant runs on a local model (Ollama). Detection runs on-device (Frigate).
 - **Never expose services to the public internet.** Use `tailscale serve` (tailnet
   only), never `tailscale funnel`. Keep ports bound to localhost/tailnet.
-- **Never commit secrets.** `.env`, `assistant/config.json`, and `nvr/config.yml`
+- **Never commit secrets.** `.env`, `assistant/config.json`, and `nvr/config/config.yml`
   hold credentials and are gitignored. Help the owner fill them; don't print them back.
 - **Don't run destructive commands** without explaining them first.
 
 ## Setup order (help the owner through these)
 1. `./setup.sh` — checks prerequisites, seeds config files.
-2. Fill `.env` and `nvr/config.yml` with camera IPs + RTSP credentials.
+2. Fill `.env` and `nvr/config/config.yml` with camera IPs + RTSP credentials.
    (Tapo: app -> camera -> Advanced Settings -> Camera Account, then enable RTSP.)
-3. `cd nvr && docker compose up -d` — Frigate at http://localhost:5000
+3. `docker compose up -d frigate` — Frigate at http://localhost:5000 (auth UI at :8971)
 4. `ollama pull qwen3.5:9b` — the local assistant model.
 5. `cd assistant && python3 assistant.py` — talk to the assistant.
 6. `python3 assistant/sitrep.py` — generate a brief; add to cron for a daily one.
@@ -30,7 +30,7 @@ You (the agent) are helping the owner stand this up. Be concrete and hands-on.
 
 ## Layout
 - `assistant/` — chat + two-way Telegram bot, sitrep, notify + camera alert watcher (with snapshots)
-- `nvr/` — Frigate docker-compose + config + RTSP checker + TUNING.md (zones/masks/detectors)
+- `nvr/` — Frigate config + RTSP checker + TUNING.md (zones/masks/detectors)
 - `tailscale/` — wire the box into your tailnet and serve services privately
 - `backup/` — rsync the stack to a tailnet host (e.g. the Pi)
 - `docs/` — home-grade box-hardening checklist
