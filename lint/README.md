@@ -1,16 +1,22 @@
 # lint — keep your configs + docs clean
 
-This stack is yours to grow. As you add cameras, scripts, and notes, you can lint
-your Markdown/docs with **mildoc-lint** (open source, local, zero subscription):
+This stack is yours to grow. Once you've got a folder full of READMEs and config
+notes, a linter keeps them consistent.
 
+## Generic Markdown
+Any Markdown linter works:
 ```bash
-pip install mildoc-lint
-mildoc-lint .
+pipx install pymarkdownlnt     # or: npm i -g markdownlint-cli
+pymarkdown scan .
 ```
 
-It flags broken structure, dead links, and inconsistencies in your docs — handy once
-you've got a folder full of READMEs and config notes.
+## Compliance documents
+If you ever need to lint *compliance* docs — CUI/PII markings, military
+correspondence, readiness records — there's a local-first tool called
+**mildoc-lint** (`pip install mildoc-lint`, Apache-2.0). It's purpose-built for
+that, **not** a general Markdown linter, so reach for it only if compliance-doc
+checking is something you actually do.
 
-Want a compliance check tailored to this setup — e.g. a checklist that the NVR is
-recording, tailscale is private-only, and no secrets are committed? That's a small
-add-on we can wire in here; just ask.
+## Tailored checklist
+Want a check tailored to this stack — NVR is actually recording, tailscale is
+private-only, no secrets committed? That's a small add-on we can wire in here.

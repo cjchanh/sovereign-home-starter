@@ -18,11 +18,21 @@ need() {
 echo "checking prerequisites..."
 need python3   "install Python 3.10+"
 need docker    "install Docker (for the camera NVR)"
+# 'docker compose' is a plugin — command -v can't see a subcommand, so check it directly.
+if docker compose version >/dev/null 2>&1; then
+  echo "  ok:      docker compose"
+else
+  echo "  MISSING: docker compose plugin — install the docker-compose-plugin package"
+fi
 need tailscale "run ./tailscale/setup.sh to install"
 need ollama    "install from https://ollama.com (for the local assistant model)"
 
 # 2. seed config files (never overwrite an existing real config) ------------
 seed() {
+  if [ ! -f "$1" ]; then
+    echo "  ERROR:   missing template $1"
+    return 1
+  fi
   if [ -f "$2" ]; then
     echo "  keep:    $2 (already exists)"
   else

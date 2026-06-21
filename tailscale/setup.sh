@@ -21,6 +21,10 @@ echo "done. from any device signed into the same tailnet:"
 echo "  tailscale status        # find this node's name"
 echo "  open https://<node-name>.<your-tailnet>.ts.net/"
 echo
+echo "NOTE: 'serve' gives EVERY device/user on your tailnet access to the camera UI"
+echo "      with no extra login. Keep your tailnet single-user, or restrict port 5000"
+echo "      with a tailscale ACL grant. (Recent Frigate stable also has built-in auth.)"
+echo
 echo "NOTE: do NOT run 'tailscale funnel' unless you intend to expose this to the"
 echo "      public internet. 'tailscale serve' keeps it private to your tailnet."
-echo "      'tailscale serve --https=443 off' (or 'reset') stops serving."
+echo "      'sudo tailscale serve reset' stops serving."

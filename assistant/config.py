@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import copy
 import json
+import sys
 from pathlib import Path
 
 DEFAULT_CONFIG: dict = {
@@ -29,10 +30,18 @@ def load_config(path: str | None = None) -> dict:
     p = Path(path).expanduser()
     if not p.exists():
         return cfg
-    user = json.loads(p.read_text(encoding="utf-8"))
+    try:
+        user = json.loads(p.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
+        print(f"[!] Ignoring bad config {p}: {exc}. Using defaults.", file=sys.stderr)
+        return cfg
+    if not isinstance(user, dict):
+        return cfg
     for key, value in user.items():
-        if key == "sitrep" and isinstance(value, dict):
-            cfg["sitrep"].update(value)
+        if key == "sitrep":
+            if isinstance(value, dict):
+                cfg["sitrep"].update(value)
+            # ignore a non-dict sitrep override; keep the defaults
         else:
             cfg[key] = value
     return cfg

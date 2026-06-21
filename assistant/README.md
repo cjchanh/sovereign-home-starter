@@ -13,7 +13,8 @@ cd assistant
 python3 assistant.py          # chat: /remember, /todo, /sitrep, /quit
 python3 sitrep.py             # print a sitrep on its own
 ```
-Run the commands from inside the `assistant/` folder so the modules import cleanly.
+`sitrep.py` runs from anywhere via its full path; for the chat REPL, running from
+inside `assistant/` is simplest.
 
 ## Daily sitrep via cron (example: 7am)
 ```cron

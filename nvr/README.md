@@ -17,6 +17,9 @@ user/password, enable RTSP. The URL is `rtsp://<user>:<pass>@<camera-ip>:554/str
 and reference it in `config.yml` as `{FRIGATE_RTSP_PASSWORD}` (already wired in the
 example).
 
+> **Use only letters and digits in the camera-account password.** Frigate doesn't
+> URL-encode it, so special characters (`@ : / # ? % &`) will break the stream.
+
 Add cameras by copying the camera block. You're only limited by this box's
 CPU / RAM / disk — not an 8-camera hub.
 

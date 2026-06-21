@@ -3,13 +3,16 @@
 #
 # Copy this to config.yml (setup.sh does it) and edit the camera IP + RTSP path.
 # The password comes from ../.env (FRIGATE_RTSP_PASSWORD) via {FRIGATE_RTSP_PASSWORD}.
+# IMPORTANT: use only letters and digits in the camera-account password. Frigate does
+# NOT URL-encode it, so special characters (@ : / # ? % &) will break the RTSP stream.
 
 mqtt:
   enabled: false
 
 detectors:
-  # CPU detector works everywhere. For many cameras add a Google Coral TPU or
-  # use your iGPU (see docs) for much lower CPU usage.
+  # CPU detector works everywhere with no extra hardware. For lower CPU on the same
+  # box, Frigate recommends the OpenVINO detector in CPU mode; for many cameras add a
+  # Google Coral TPU or use your iGPU (see docs).
   cpu1:
     type: cpu
 
@@ -35,9 +38,21 @@ cameras:
         - car
     record:
       enabled: true
-      retain:
+      # Frigate 0.14+ uses a tiered record schema (the old record.retain.{days,mode}
+      # was removed and is now rejected on startup). continuous.days: 0 = no 24/7
+      # recording; set it to 7 for always-on. motion/alerts/detections retained 7-14d.
+      continuous:
+        days: 0
+      motion:
         days: 7
-        mode: motion
+      alerts:
+        retain:
+          days: 14
+          mode: motion
+      detections:
+        retain:
+          days: 14
+          mode: motion
     snapshots:
       enabled: true
       retain:

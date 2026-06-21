@@ -34,4 +34,6 @@ def chat(
             f"Start it with `ollama serve` and pull the model with "
             f"`ollama pull {model}`. ({exc})"
         ) from exc
-    return data.get("message", {}).get("content", "").strip()
+    msg = data.get("message") if isinstance(data, dict) else None
+    content = msg.get("content", "") if isinstance(msg, dict) else ""
+    return content.strip()
