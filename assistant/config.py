@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 DEFAULT_CONFIG: dict = {
-    "model": "qwen2.5:7b",
+    "model": "qwen3.5:9b",
     "ollama_url": "http://127.0.0.1:11434",
     "memory_path": "~/.sovereign-home/memory.jsonl",
     "sitrep": {
@@ -29,7 +29,7 @@ DEFAULT_CONFIG: dict = {
     "alerts": {
         "cooldown_seconds": 120,    # suppress repeat alerts for same camera within this window
         "vision_caption": False,    # optional: run snapshot through a local vision model
-        "vision_model": "qwen2.5vl:7b",  # Ollama vision model; pull with: ollama pull qwen2.5vl:7b
+        "vision_model": "qwen3-vl:8b",  # Ollama vision model; pull with: ollama pull qwen3-vl:8b
         "vision_timeout": 30,       # max seconds per vision call before falling back to a plain alert
     },
 }

@@ -190,7 +190,7 @@ def _send_alert(
 
     alerts_cfg = cfg.get("alerts", {})
     vision_enabled = bool(alerts_cfg.get("vision_caption", False))
-    vision_model = str(alerts_cfg.get("vision_model", "qwen2.5vl:7b"))
+    vision_model = str(alerts_cfg.get("vision_model", "qwen3-vl:8b"))
     try:
         vision_timeout = float(alerts_cfg.get("vision_timeout", 30))
     except (TypeError, ValueError):

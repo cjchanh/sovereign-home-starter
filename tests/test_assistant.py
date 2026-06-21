@@ -84,13 +84,13 @@ class MemoryTests(unittest.TestCase):
 class ConfigTests(unittest.TestCase):
     def test_defaults_when_missing(self):
         cfg = config.load_config(None)
-        self.assertEqual(cfg["model"], "qwen2.5:7b")
+        self.assertEqual(cfg["model"], "qwen3.5:9b")
         self.assertIn("notify", cfg)
 
     def test_malformed_config_falls_back(self):
         p = str(Path(tempfile.mkdtemp()) / "bad.json")
         Path(p).write_text("{ not json,, }")
-        self.assertEqual(config.load_config(p)["model"], "qwen2.5:7b")
+        self.assertEqual(config.load_config(p)["model"], "qwen3.5:9b")
 
     def test_non_dict_sitrep_ignored(self):
         p = str(Path(tempfile.mkdtemp()) / "c.json")
@@ -118,7 +118,7 @@ class ConfigTests(unittest.TestCase):
     def test_vision_defaults(self):
         cfg = config.load_config(None)
         self.assertIs(cfg["alerts"]["vision_caption"], False)
-        self.assertEqual(cfg["alerts"]["vision_model"], "qwen2.5vl:7b")
+        self.assertEqual(cfg["alerts"]["vision_model"], "qwen3-vl:8b")
         self.assertEqual(cfg["alerts"]["vision_timeout"], 30)
 
     def test_alerts_deep_merged(self):
@@ -160,9 +160,9 @@ class ConfigTests(unittest.TestCase):
         self.assertFalse(cfg["alerts"]["vision_caption"])
 
     def test_vision_model_default(self):
-        """vision_model default is qwen2.5vl:7b."""
+        """vision_model default is qwen3-vl:8b."""
         cfg = config.load_config(None)
-        self.assertEqual(cfg["alerts"]["vision_model"], "qwen2.5vl:7b")
+        self.assertEqual(cfg["alerts"]["vision_model"], "qwen3-vl:8b")
 
     def test_vision_caption_deep_merged(self):
         """vision_caption can be enabled via the alerts block in config.json."""
@@ -401,7 +401,7 @@ class VisionTests(unittest.TestCase):
         urllib.request.urlopen = _mock_urlopen(body)
         try:
             result = vision.describe_image(
-                "http://localhost:11434", "qwen2.5vl:7b", b"\xff\xd8\xff"
+                "http://localhost:11434", "qwen3-vl:8b", b"\xff\xd8\xff"
             )
         finally:
             urllib.request.urlopen = orig
@@ -418,7 +418,7 @@ class VisionTests(unittest.TestCase):
         urllib.request.urlopen = fake_urlopen
         try:
             result = vision.describe_image(
-                "http://localhost:11434", "qwen2.5vl:7b", b"\xff\xd8\xff"
+                "http://localhost:11434", "qwen3-vl:8b", b"\xff\xd8\xff"
             )
         finally:
             urllib.request.urlopen = orig
@@ -433,7 +433,7 @@ class VisionTests(unittest.TestCase):
         urllib.request.urlopen = fake_urlopen
         try:
             result = vision.describe_image(
-                "http://localhost:11434", "qwen2.5vl:7b", b"\xff\xd8\xff"
+                "http://localhost:11434", "qwen3-vl:8b", b"\xff\xd8\xff"
             )
         finally:
             urllib.request.urlopen = orig
@@ -446,7 +446,7 @@ class VisionTests(unittest.TestCase):
         urllib.request.urlopen = _mock_urlopen(body)
         try:
             result = vision.describe_image(
-                "http://localhost:11434", "qwen2.5vl:7b", b"\xff\xd8\xff"
+                "http://localhost:11434", "qwen3-vl:8b", b"\xff\xd8\xff"
             )
         finally:
             urllib.request.urlopen = orig
@@ -459,7 +459,7 @@ class VisionTests(unittest.TestCase):
         urllib.request.urlopen = _mock_urlopen(body)
         try:
             result = vision.describe_image(
-                "http://localhost:11434", "qwen2.5vl:7b", b"\xff\xd8\xff"
+                "http://localhost:11434", "qwen3-vl:8b", b"\xff\xd8\xff"
             )
         finally:
             urllib.request.urlopen = orig
@@ -471,7 +471,7 @@ class VisionTests(unittest.TestCase):
         urllib.request.urlopen = _mock_urlopen(b"not json {{")
         try:
             result = vision.describe_image(
-                "http://localhost:11434", "qwen2.5vl:7b", b"\xff\xd8\xff"
+                "http://localhost:11434", "qwen3-vl:8b", b"\xff\xd8\xff"
             )
         finally:
             urllib.request.urlopen = orig
@@ -480,7 +480,7 @@ class VisionTests(unittest.TestCase):
     def test_describe_image_returns_none_on_empty_image_bytes(self):
         """describe_image returns None immediately when given empty bytes."""
         result = vision.describe_image(
-            "http://localhost:11434", "qwen2.5vl:7b", b""
+            "http://localhost:11434", "qwen3-vl:8b", b""
         )
         self.assertIsNone(result)
 
@@ -491,7 +491,7 @@ class VisionTests(unittest.TestCase):
         urllib.request.urlopen = _mock_urlopen(body)
         try:
             result = vision.describe_image(
-                "http://localhost:11434", "qwen2.5vl:7b", b"\xff\xd8\xff"
+                "http://localhost:11434", "qwen3-vl:8b", b"\xff\xd8\xff"
             )
         finally:
             urllib.request.urlopen = orig
@@ -736,7 +736,7 @@ class AlertWatcherTests(unittest.TestCase):
         # Inject vision_caption=true into the config via a real config file.
         cfg_path = str(self.tmpdir / "vcfg.json")
         Path(cfg_path).write_text(json.dumps({
-            "alerts": {"vision_caption": True, "vision_model": "qwen2.5vl:7b"},
+            "alerts": {"vision_caption": True, "vision_model": "qwen3-vl:8b"},
             "notify": {"telegram_bot_token": "t", "telegram_chat_id": "1"},
         }))
         sys.argv = ["alert_watcher.py", "--config", cfg_path]
@@ -759,7 +759,7 @@ class AlertWatcherTests(unittest.TestCase):
         notify.send_photo = lambda *a, **k: False
         cfg_path = str(self.tmpdir / "vcfg2.json")
         Path(cfg_path).write_text(json.dumps({
-            "alerts": {"vision_caption": True, "vision_model": "qwen2.5vl:7b"},
+            "alerts": {"vision_caption": True, "vision_model": "qwen3-vl:8b"},
             "notify": {"telegram_bot_token": "t", "telegram_chat_id": "1"},
         }))
         sys.argv = ["alert_watcher.py", "--config", cfg_path]
@@ -801,7 +801,7 @@ class AlertWatcherTests(unittest.TestCase):
         notify.send = lambda *a, **k: False
         cfg_path = str(self.tmpdir / "vcfg3.json")
         Path(cfg_path).write_text(json.dumps({
-            "alerts": {"vision_caption": True, "vision_model": "qwen2.5vl:7b"},
+            "alerts": {"vision_caption": True, "vision_model": "qwen3-vl:8b"},
             "notify": {"telegram_bot_token": "t", "telegram_chat_id": "1"},
         }))
         sys.argv = ["alert_watcher.py", "--config", cfg_path]

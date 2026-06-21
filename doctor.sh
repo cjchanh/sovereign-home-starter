@@ -18,7 +18,7 @@ echo "== sovereign-home doctor =="
 if command -v python3 >/dev/null 2>&1; then pass "python3 ($(python3 -V 2>&1))"; else fail "python3 missing"; fi
 
 # the model the assistant is configured to use
-model="$(python3 - "$here" <<'PY' 2>/dev/null || echo "qwen2.5:7b"
+model="$(python3 - "$here" <<'PY' 2>/dev/null || echo "qwen3.5:9b"
 import sys
 sys.path.insert(0, sys.argv[1] + "/assistant")
 import config
@@ -32,7 +32,7 @@ if curl -fsS http://127.0.0.1:11434/api/tags -o /tmp/_sh_ollama.json 2>/dev/null
   if python3 - "$model" <<'PY' 2>/dev/null
 import json, sys
 want = sys.argv[1]
-# Match the EXACT configured model, tag and all. Ollama reports "qwen2.5:7b";
+# Match the EXACT configured model, tag and all. Ollama reports "qwen3.5:9b";
 # a default ":latest" config is matched against "<name>:latest" or a bare "<name>".
 names = {m.get("name", "") for m in json.load(open("/tmp/_sh_ollama.json")).get("models", [])}
 bare = {n.split(":")[0] for n in names}

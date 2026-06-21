@@ -1,5 +1,5 @@
 {
-  "model": "qwen2.5:7b",
+  "model": "qwen3.5:9b",
   "ollama_url": "http://127.0.0.1:11434",
   "memory_path": "~/.sovereign-home/memory.jsonl",
   "sitrep": {
@@ -16,7 +16,7 @@
   "alerts": {
     "cooldown_seconds": 120,
     "vision_caption": false,
-    "vision_model": "qwen2.5vl:7b",
+    "vision_model": "qwen3-vl:8b",
     "vision_timeout": 30
   }
 }

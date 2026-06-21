@@ -8,7 +8,7 @@ No third-party Python packages — just **Python 3.10+** and a running Ollama.
 
 ## Run
 ```bash
-ollama pull qwen2.5:7b        # one time
+ollama pull qwen3.5:9b        # one time
 cd assistant
 python3 assistant.py          # chat: /remember, /todo, /sitrep, /quit
 python3 sitrep.py             # print a sitrep on its own
@@ -86,9 +86,9 @@ systemctl --user enable --now telegram-bot
 
 ## Picking a model for your box
 Ollama models scale with RAM. Rough guide:
-- **8 GB** → `qwen2.5:3b` (fast, light)
-- **16 GB** → `qwen2.5:7b` (the default — good balance)
-- **32 GB+** → `qwen2.5:14b` (sharper, slower)
+- **8 GB** → `qwen3.5:4b` (fast, light)
+- **16 GB** → `qwen3.5:9b` (the default — good balance)
+- **32 GB+** → `gemma4:12b` (sharper, slower)
 
 Set it as `"model"` in `config.json`. `ollama list` shows what you've pulled.
 
@@ -150,16 +150,16 @@ The snapshot never leaves the box — it goes only to your local Ollama process.
 is the sovereignty-preserving path: on-device detection, on-device description, no
 cloud.
 
-**`alerts.vision_model`** (default `"qwen2.5vl:7b"`) — the Ollama vision model to
+**`alerts.vision_model`** (default `"qwen3-vl:8b"`) — the Ollama vision model to
 use. Pull it once before enabling:
 
 ```bash
-ollama pull qwen2.5vl:7b
+ollama pull qwen3-vl:8b
 ```
 
-Any Ollama-compatible vision model works (e.g. `llava:13b`, `moondream:1.8b`).
-Smaller models are faster; larger ones give better descriptions. Check what is
-available with `ollama list`.
+Any Ollama-compatible vision model works (e.g. `moondream:1.8b` for a tiny/fast
+option, or `minicpm-v:8b`). Smaller models are faster; larger ones give better
+descriptions. Check what is available with `ollama list`.
 
 **`alerts.vision_timeout`** (default `30`) — max seconds for a single vision call
 before it gives up and sends the plain alert. Lower it on slow hardware so a hung
@@ -169,7 +169,7 @@ model can't stall a run for long.
 "alerts": {
   "cooldown_seconds": 120,
   "vision_caption": true,
-  "vision_model": "qwen2.5vl:7b",
+  "vision_model": "qwen3-vl:8b",
   "vision_timeout": 30
 }
 ```

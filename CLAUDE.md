@@ -20,7 +20,7 @@ You (the agent) are helping the owner stand this up. Be concrete and hands-on.
 2. Fill `.env` and `nvr/config.yml` with camera IPs + RTSP credentials.
    (Tapo: app -> camera -> Advanced Settings -> Camera Account, then enable RTSP.)
 3. `cd nvr && docker compose up -d` — Frigate at http://localhost:5000
-4. `ollama pull qwen2.5:7b` — the local assistant model.
+4. `ollama pull qwen3.5:9b` — the local assistant model.
 5. `cd assistant && python3 assistant.py` — talk to the assistant.
 6. `python3 assistant/sitrep.py` — generate a brief; add to cron for a daily one.
 7. `./tailscale/setup.sh` — reach it all from your phone, tailnet-only.

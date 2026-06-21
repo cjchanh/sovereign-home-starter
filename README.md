@@ -60,7 +60,7 @@ Then:
    (Test a camera first: `nvr/check-camera.sh 'rtsp://user:pass@IP:554/stream2'`.)
 2. **Cameras:** `docker compose up -d frigate` -> Frigate auth UI at
    http://127.0.0.1:8971 (internal API remains loopback-only at http://127.0.0.1:5000)
-3. **Model:** `ollama pull qwen2.5:7b`
+3. **Model:** `ollama pull qwen3.5:9b`
 4. **Assistant:** `cd assistant && python3 assistant.py`
 5. **Phone delivery:** add your Telegram bot token to `assistant/config.json`, then
    `python3 sitrep.py --notify` (sitrep) and cron `alert_watcher.py` (camera alerts) —
