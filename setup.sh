@@ -3,6 +3,7 @@
 # prerequisites and seeds example config files into place. Nothing destructive,
 # never overwrites an existing real config.
 set -euo pipefail
+umask 077   # any file we create is owner-only — no world/group-readable window for secrets
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "== sovereign-home-starter setup =="

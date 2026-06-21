@@ -58,7 +58,8 @@ Then:
 4. **Assistant:** `cd assistant && python3 assistant.py`
 5. **Phone delivery:** add your Telegram bot token to `assistant/config.json`, then
    `python3 sitrep.py --notify` (sitrep) and cron `alert_watcher.py` (camera alerts) —
-   see `assistant/README.md`.
+   see `assistant/README.md`. (Per-camera alert cooldown, default 120s, and optional
+   Frigate proxy-auth `nvr_api_key` are also set in `assistant/config.json`.)
 6. **Remote access:** `./tailscale/setup.sh` → reach it from your phone, tailnet-only
 7. **Backup:** `./backup/backup.sh pi@your-pi` · **Harden:** see `docs/HARDENING.md`
 

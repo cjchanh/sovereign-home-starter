@@ -99,7 +99,7 @@ def _read_cooldown() -> dict[str, float]:
 
 def _save_cooldown(cd: dict[str, float]) -> None:
     COOLDOWN_STATE.parent.mkdir(parents=True, exist_ok=True)
-    tmp = COOLDOWN_STATE.with_suffix(".cooldown.tmp")
+    tmp = COOLDOWN_STATE.with_suffix(".tmp")
     tmp.write_text(json.dumps(cd), encoding="utf-8")
     os.replace(tmp, COOLDOWN_STATE)  # atomic
 
@@ -195,9 +195,15 @@ def main() -> None:
     cfg = cfg_mod.load_config(args.config)
     nvr_url = cfg.get("sitrep", {}).get("nvr_url", "http://localhost:5000")
     api_key = frigate_mod.get_api_key(cfg)
-    cooldown_secs: float = float(
-        cfg.get("alerts", {}).get("cooldown_seconds", 120)
-    )
+    try:
+        cooldown_secs = float(cfg.get("alerts", {}).get("cooldown_seconds", 120))
+    except (TypeError, ValueError):
+        # A typo'd config (string / null) must not crash a cron-run security alerter.
+        print(
+            "[alert_watcher] bad alerts.cooldown_seconds; using default 120.",
+            file=sys.stderr,
+        )
+        cooldown_secs = 120.0
 
     last = _read_state()
     if last is None:  # first run or corrupt -> seed, don't blast history

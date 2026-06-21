@@ -17,8 +17,28 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import urllib.error
 import urllib.request
+
+
+def _clean_key(raw: str) -> str:
+    """Normalize an API key into a safe HTTP header value.
+
+    Strips surrounding whitespace (a trailing newline from a copy-paste or a
+    file-read is the common case). If the key still contains a CR or LF after
+    stripping, it can't go in a header — drop it with a warning rather than let
+    http.client raise mid-run and crash the watcher (fail-soft contract).
+    """
+    key = (raw or "").strip()
+    if "\r" in key or "\n" in key:
+        print(
+            "[frigate] ignoring API key with embedded newline/return — "
+            "check nvr_api_key / FRIGATE_API_KEY.",
+            file=sys.stderr,
+        )
+        return ""
+    return key
 
 
 def get_api_key(cfg: dict | None) -> str:
@@ -28,11 +48,11 @@ def get_api_key(cfg: dict | None) -> str:
     """
     env_key = os.environ.get("FRIGATE_API_KEY", "")
     if env_key:
-        return env_key
+        return _clean_key(env_key)
     if isinstance(cfg, dict):
         sitrep = cfg.get("sitrep", {})
         if isinstance(sitrep, dict):
-            return str(sitrep.get("nvr_api_key", "") or "")
+            return _clean_key(str(sitrep.get("nvr_api_key", "") or ""))
     return ""
 
 
@@ -57,7 +77,7 @@ def fetch_json(url: str, api_key: str, timeout: int = 10) -> list | dict | None:
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read().decode("utf-8"))
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError):
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError, ValueError):
         return None
 
 
@@ -71,5 +91,5 @@ def fetch_bytes(url: str, api_key: str, timeout: int = 10) -> bytes | None:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             data = resp.read()
         return data if data else None
-    except (urllib.error.URLError, TimeoutError, OSError):
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
         return None
