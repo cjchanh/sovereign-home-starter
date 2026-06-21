@@ -24,8 +24,8 @@ These are operator-gated. Do not run them without an explicit commit/release
 authorization.
 
 ```bash
-git status --short
-git add .github .env.example CHANGELOG.md CONTRIBUTING.md docker-compose.yml docs/RELEASE_CHECKLIST.md assistant/Dockerfile assistant/config.py tests/test_assistant.py README.md nvr/README.md setup.sh
+git status --short        # review everything first
+git add -A
 git commit -m "release: prepare v0.1.0 public starter stack"
 git tag -a v0.1.0 -m "v0.1.0"
 git push origin main

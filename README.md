@@ -88,6 +88,13 @@ Compose uses the same `.env` that `setup.sh` creates. The assistant container
 talks to Ollama on the host via `host.docker.internal` and talks to Frigate over
 the private Compose network.
 
+**Two things to know:**
+- **Run `./setup.sh` first** so `nvr/config.yml` exists before `docker compose up`
+  (a missing bind source would otherwise be created as an empty directory).
+- For the containers to reach Ollama on the host, start Ollama bound to all
+  interfaces: `OLLAMA_HOST=0.0.0.0 ollama serve` (the default 127.0.0.1 isn't
+  reachable from inside a container).
+
 ## Verify it works
 - `./doctor.sh` — pokes your **live** services (Ollama + model, Frigate, Tailscale,
   and a real Telegram test message) and tells you exactly what's wired and what isn't.
@@ -119,4 +126,4 @@ the private Compose network.
 - Remote access is **tailnet only**, and via Frigate's *authenticated* port (8971) —
   never the unauthenticated :5000, which stays bound to localhost.
 
-MIT licensed. Yours to fork, change, and run.
+Apache-2.0 licensed. Yours to fork, change, and run.

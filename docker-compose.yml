@@ -74,6 +74,9 @@ services:
     environment:
       SOVEREIGN_HOME_NVR_URL: http://frigate:5000
       SOVEREIGN_HOME_MEMORY_PATH: /state/memory.jsonl
+      # Persist the alert high-water mark + cooldown on the volume, or the
+      # container re-seeds every run and never alerts.
+      SOVEREIGN_HOME_STATE_DIR: /state
     volumes:
       - assistant-state:/state
     depends_on:

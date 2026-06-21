@@ -45,8 +45,13 @@ import frigate as frigate_mod
 import notify
 
 ALERT_LABELS = {"person", "car"}
-STATE = Path("~/.sovereign-home/alert_watcher.state").expanduser()
-COOLDOWN_STATE = Path("~/.sovereign-home/alert_watcher.cooldown.json").expanduser()
+# State dir is env-overridable so it can live on a persistent volume in a container
+# (compose sets SOVEREIGN_HOME_STATE_DIR=/state). Without this, a containerized
+# run writes state to an ephemeral ~/.sovereign-home and re-seeds the baseline every
+# run — silently never alerting. Default is the host path; unchanged for host/cron use.
+_STATE_DIR = Path(os.environ.get("SOVEREIGN_HOME_STATE_DIR", "~/.sovereign-home")).expanduser()
+STATE = _STATE_DIR / "alert_watcher.state"
+COOLDOWN_STATE = _STATE_DIR / "alert_watcher.cooldown.json"
 LIMIT = 100
 MAX_PAGES = 50  # safety cap: at most LIMIT * MAX_PAGES events drained per run
 
