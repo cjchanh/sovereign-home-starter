@@ -29,7 +29,11 @@ CPU / RAM / disk — not an 8-camera hub.
   up in the example. Match `detect: width/height` to your substream resolution.
 - Many cameras or high CPU? Add a Google Coral TPU or enable iGPU hardware
   acceleration (uncomment the `devices:` line in `docker-compose.yml`). See docs.
-- Recordings land in `./storage` (gitignored). Set `retain.days` to taste.
+- Recordings land in `./storage` (gitignored). Set retention to taste — and watch
+  your disk: motion + alerts at 14-day retain on a busy camera can eat a lot of space.
+  Lower the `days:` values, or point `./storage` at a big disk.
+- **Sizing:** the CPU detector handles ~2–3 cameras at 5fps comfortably. More cameras
+  or higher fps → use OpenVINO / a Coral TPU / an iGPU (see [TUNING.md](TUNING.md)).
 
 ## Advanced tuning
 Zones, motion masks, and faster detectors (OpenVINO/Coral): see **[TUNING.md](TUNING.md)**.

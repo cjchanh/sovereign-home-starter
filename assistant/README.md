@@ -76,6 +76,11 @@ Ollama models scale with RAM. Rough guide:
 
 Set it as `"model"` in `config.json`. `ollama list` shows what you've pulled.
 
+**On CPU (no GPU), expect multi-second replies** — a 7B model is typically ~10–40s
+per answer on a CPU-only box. That's normal, not broken. Use a smaller model for
+snappier replies, or add a GPU. The alert watcher and sitrep don't wait on the model
+unless you ask it to summarize.
+
 ## Config
 Copy `config.example.json` to `config.json` (setup.sh does this) and edit the model,
 memory path, and NVR URL. If `config.json` is missing, sensible defaults are used so

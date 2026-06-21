@@ -45,6 +45,12 @@ seed "$here/.env.example"                 "$here/.env"
 seed "$here/assistant/config.example.json" "$here/assistant/config.json"
 seed "$here/nvr/config.example.yml"        "$here/nvr/config.yml"
 
+# Lock down the secret-bearing files so they aren't world/group readable. The
+# audit (security/audit.sh) CHECKS for 600 — this is what actually SETS it.
+for s in "$here/.env" "$here/assistant/config.json" "$here/nvr/config.yml"; do
+  [ -f "$s" ] && chmod 600 "$s" && echo "  chmod 600: $s"
+done
+
 cat <<'NEXT'
 
 next steps (see README.md and each folder's README for detail):

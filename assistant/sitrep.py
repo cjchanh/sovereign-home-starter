@@ -14,6 +14,7 @@ import argparse
 import json
 import shutil
 import subprocess
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -46,7 +47,10 @@ def _system_health() -> str:
 
 
 def _nvr_events(nvr_url: str, hours: int) -> str:
-    url = f"{nvr_url.rstrip('/')}/api/events?limit=50"
+    # Actually bound to the window — `after` is a unix timestamp, so the brief's
+    # "last Nh" matches the data instead of just "the last 50 events, whenever".
+    after = time.time() - hours * 3600
+    url = f"{nvr_url.rstrip('/')}/api/events?limit=100&after={after}"
     try:
         with urllib.request.urlopen(url, timeout=10) as resp:
             events = json.loads(resp.read().decode("utf-8"))

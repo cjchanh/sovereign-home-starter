@@ -31,6 +31,10 @@ loglevel = 3
 # Connects to the public Reticulum testnet over TCP/IP so your node can reach
 # the wider network today with no special hardware. You can also host a local
 # TCP listener to let other LAN/tailnet nodes connect to you.
+#
+# SOVEREIGNTY NOTE: this is a PUBLIC entry node — enabling it announces your node
+# to the public testnet. If you want a fully private mesh, comment this block out
+# and use only the Local TCP Server (below) and/or the RNode/LoRa interface.
 
 [[Default TCP Interface]]
 type = TCPClientInterface
