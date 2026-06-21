@@ -21,6 +21,14 @@ inside `assistant/` is simplest.
 0 7 * * *  cd /path/to/sovereign-home-starter/assistant && /usr/bin/python3 sitrep.py >> "$HOME/sitrep.log" 2>&1
 ```
 
+## Picking a model for your box
+Ollama models scale with RAM. Rough guide:
+- **8 GB** → `qwen2.5:3b` (fast, light)
+- **16 GB** → `qwen2.5:7b` (the default — good balance)
+- **32 GB+** → `qwen2.5:14b` (sharper, slower)
+
+Set it as `"model"` in `config.json`. `ollama list` shows what you've pulled.
+
 ## Config
 Copy `config.example.json` to `config.json` (setup.sh does this) and edit the model,
 memory path, and NVR URL. If `config.json` is missing, sensible defaults are used so
