@@ -22,6 +22,9 @@ jobs:
       - name: Run the test suite
         run: python3 -m unittest discover -s tests -v
 
+      - name: Offline doctor (product logic, not live NVR)
+        run: ./doctor.sh --offline
+
       - name: Syntax-check every shell script
         run: |
           set -e

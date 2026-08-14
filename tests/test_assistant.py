@@ -24,11 +24,38 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "assistant"))
 import alert_watcher  # noqa: E402
 import config  # noqa: E402
 import frigate as frigate_mod  # noqa: E402
+import llm  # noqa: E402
 import memory  # noqa: E402
 import notify  # noqa: E402
 import sitrep  # noqa: E402
 import telegram_bot  # noqa: E402
 import vision  # noqa: E402
+
+_OLLAMA_ENV = (
+    "SOVEREIGN_HOME_MODEL",
+    "SOVEREIGN_HOME_OLLAMA_URL",
+    "SOVEREIGN_HOME_OLLAMA_API_KEY",
+    "SOVEREIGN_HOME_MEMORY_PATH",
+    "SOVEREIGN_HOME_NVR_URL",
+    "OLLAMA_HOST",
+    "OLLAMA_MODEL",
+    "OLLAMA_API_KEY",
+)
+
+
+def _clear_ollama_env():
+    saved = {k: os.environ.get(k) for k in _OLLAMA_ENV}
+    for k in _OLLAMA_ENV:
+        os.environ.pop(k, None)
+    return saved
+
+
+def _restore_env(saved: dict):
+    for key, value in saved.items():
+        if value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = value
 
 
 class _Resp(io.BytesIO):
@@ -83,9 +110,13 @@ class MemoryTests(unittest.TestCase):
 
 class ConfigTests(unittest.TestCase):
     def test_defaults_when_missing(self):
-        cfg = config.load_config(None)
-        self.assertEqual(cfg["model"], "qwen3.5:9b")
-        self.assertIn("notify", cfg)
+        saved = _clear_ollama_env()
+        try:
+            cfg = config.load_config(None)
+            self.assertEqual(cfg["model"], "qwen3.5:9b")
+            self.assertIn("notify", cfg)
+        finally:
+            _restore_env(saved)
 
     def test_malformed_config_falls_back(self):
         p = str(Path(tempfile.mkdtemp()) / "bad.json")
@@ -102,10 +133,35 @@ class ConfigTests(unittest.TestCase):
     def test_loopback_defaults_not_localhost(self):
         # Docker binds 127.0.0.1 (IPv4) only; localhost can resolve to ::1 (IPv6)
         # first -> the watcher would silently miss Frigate. Defaults must be 127.0.0.1.
-        cfg = config.load_config(None)
-        self.assertIn("127.0.0.1", cfg["sitrep"]["nvr_url"])
-        self.assertNotIn("localhost", cfg["sitrep"]["nvr_url"])
-        self.assertIn("127.0.0.1", cfg["ollama_url"])
+        saved = _clear_ollama_env()
+        try:
+            cfg = config.load_config(None)
+            self.assertIn("127.0.0.1", cfg["sitrep"]["nvr_url"])
+            self.assertNotIn("localhost", cfg["sitrep"]["nvr_url"])
+            self.assertIn("127.0.0.1", cfg["ollama_url"])
+        finally:
+            _restore_env(saved)
+
+    def test_ollama_host_env_overrides_url(self):
+        saved = _clear_ollama_env()
+        try:
+            os.environ["OLLAMA_HOST"] = "https://ollama.com"
+            os.environ["OLLAMA_MODEL"] = "gpt-oss:20b"
+            cfg = config.load_config(None)
+            self.assertEqual(cfg["ollama_url"], "https://ollama.com")
+            self.assertEqual(cfg["model"], "gpt-oss:20b")
+        finally:
+            _restore_env(saved)
+
+    def test_sovereign_ollama_url_wins_over_ollama_host(self):
+        saved = _clear_ollama_env()
+        try:
+            os.environ["OLLAMA_HOST"] = "https://ollama.com"
+            os.environ["SOVEREIGN_HOME_OLLAMA_URL"] = "http://127.0.0.1:11434"
+            cfg = config.load_config(None)
+            self.assertEqual(cfg["ollama_url"], "http://127.0.0.1:11434")
+        finally:
+            _restore_env(saved)
 
     def test_nvr_api_key_default_empty(self):
         cfg = config.load_config(None)
@@ -841,6 +897,53 @@ class AlertWatcherTests(unittest.TestCase):
         sys.argv = ["alert_watcher.py", "--config", cfg_path]
         alert_watcher.main()
         self.assertEqual(float(self.state.read_text()), 50.0)  # mark held
+
+
+class LlmAuthTests(unittest.TestCase):
+    def test_no_key_omits_authorization(self):
+        capture: dict = {}
+
+        def fake(req, timeout=0):
+            capture["headers"] = {k.lower(): v for k, v in req.header_items()}
+            return _Resp(b'{"message":{"content":"ok"}}')
+
+        old = urllib.request.urlopen
+        urllib.request.urlopen = fake
+        try:
+            text = llm.chat("http://127.0.0.1:11434", "m", [{"role": "user", "content": "hi"}], api_key="")
+        finally:
+            urllib.request.urlopen = old
+        self.assertEqual(text, "ok")
+        self.assertNotIn("authorization", capture["headers"])
+
+    def test_key_adds_bearer_header(self):
+        capture: dict = {}
+
+        def fake(req, timeout=0):
+            capture["headers"] = {k.lower(): v for k, v in req.header_items()}
+            return _Resp(b'{"message":{"content":"ok"}}')
+
+        old = urllib.request.urlopen
+        urllib.request.urlopen = fake
+        try:
+            llm.chat("http://127.0.0.1:11434", "m", [{"role": "user", "content": "hi"}], api_key="test-key")
+        finally:
+            urllib.request.urlopen = old
+        self.assertEqual(capture["headers"].get("authorization"), "Bearer test-key")
+
+    def test_http_error_is_runtime_error(self):
+        def fake(req, timeout=0):
+            raise urllib.error.HTTPError(req.full_url, 401, "no", hdrs=None, fp=None)
+
+        old = urllib.request.urlopen
+        urllib.request.urlopen = fake
+        try:
+            with self.assertRaises(RuntimeError) as ctx:
+                llm.chat("https://ollama.com", "m", [{"role": "user", "content": "hi"}], api_key="")
+        finally:
+            urllib.request.urlopen = old
+        self.assertIn("401", str(ctx.exception))
+        self.assertIn("OLLAMA_API_KEY", str(ctx.exception))
 
 
 class SitrepTests(unittest.TestCase):

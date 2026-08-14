@@ -12,6 +12,8 @@ import sys
 import urllib.error
 import urllib.request
 
+import llm
+
 _PROMPT = (
     "Describe who or what is in this security camera frame in one short sentence."
 )
@@ -56,7 +58,7 @@ def describe_image(
     req = urllib.request.Request(
         f"{ollama_url.rstrip('/')}/api/chat",
         data=payload,
-        headers={"Content-Type": "application/json"},
+        headers=llm.request_headers(llm.resolve_api_key()),
         method="POST",
     )
     try:

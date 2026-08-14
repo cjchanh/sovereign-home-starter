@@ -96,8 +96,13 @@ the private Compose network.
   reachable from inside a container).
 
 ## Verify it works
+- `./doctor.sh --offline` — product logic only (compile, scripts, templates).
+  Missing Docker / Ollama / Frigate is an environment note, not a product
+  failure. This is the Cloud VM / CI path. Run the unittest suite separately.
 - `./doctor.sh` — pokes your **live** services (Ollama + model, Frigate, Tailscale,
   and a real Telegram test message) and tells you exactly what's wired and what isn't.
+  Ollama is the configured URL (`OLLAMA_HOST` or `assistant/config.json`), not only
+  loopback. Set `OLLAMA_API_KEY` for ollama.com.
 - `python3 -m unittest discover -s tests` — offline logic tests (no services needed).
 - `docker compose config` — validates the top-level Compose stack.
 

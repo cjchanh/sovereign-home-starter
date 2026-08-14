@@ -1,18 +1,83 @@
 #!/usr/bin/env bash
-# Health check — does each piece ACTUALLY work? Pokes the real endpoints (not a
-# status flag), reports per-component, exits 1 if a required check fails. Run it
-# after setup, or any time something feels off.
+# Health check. Live mode pokes real endpoints. --offline grades product
+# logic only and treats missing Docker/Ollama/Frigate as environment notes.
 #
 #   ./doctor.sh
+#   ./doctor.sh --offline
 set -uo pipefail   # deliberately NOT -e: run every check and report, don't abort early
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+offline=0
+for a in "$@"; do
+  case "$a" in
+    --offline) offline=1 ;;
+    -h|--help)
+      echo "Usage: ./doctor.sh [--offline]"
+      echo "  (default) probe live Docker / Ollama / Frigate / optional Telegram"
+      echo "  --offline  product logic only (tests, compile, scripts, templates)"
+      exit 0
+      ;;
+    *)
+      echo "unknown argument: $a" >&2
+      echo "Usage: ./doctor.sh [--offline]" >&2
+      exit 2
+      ;;
+  esac
+done
+
 bad=0
+env_notes=0
 pass() { echo "  [ok]   $1"; }
 warn() { echo "  [--]   $1"; }
 fail() { echo "  [FAIL] $1"; bad=$((bad + 1)); }
+envnote() { echo "  [env]  $1"; env_notes=$((env_notes + 1)); }
 
-echo "== sovereign-home doctor =="
+if [ "$offline" -eq 1 ]; then
+  echo "== sovereign-home doctor (offline) =="
+else
+  echo "== sovereign-home doctor =="
+fi
+
+# python
+if command -v python3 >/dev/null 2>&1; then pass "python3 ($(python3 -V 2>&1))"; else fail "python3 missing"; fi
+
+if [ "$offline" -eq 1 ]; then
+  if python3 -m py_compile "$here"/assistant/*.py; then
+    pass "assistant/*.py compiles"
+  else
+    fail "assistant/*.py failed py_compile"
+  fi
+  _bash_bad=0
+  while IFS= read -r -d '' s; do
+    if ! bash -n "$s"; then
+      fail "bash -n $s"
+      _bash_bad=1
+    fi
+  done < <(find "$here" -name '*.sh' -print0)
+  if [ "$_bash_bad" -eq 0 ]; then
+    pass "shell scripts bash -n"
+  fi
+  for t in \
+    "$here/.env.example" \
+    "$here/assistant/config.example.json" \
+    "$here/nvr/config.example.yml" \
+    "$here/docker-compose.yml"
+  do
+    if [ -s "$t" ]; then
+      pass "template $(basename "$t")"
+    else
+      fail "missing or empty template: $t"
+    fi
+  done
+  envnote "docker / ollama / frigate / telegram not probed (--offline)"
+  echo
+  if [ "$bad" -eq 0 ]; then
+    echo "offline product checks passed. $env_notes env note(s). live services not probed."
+    exit 0
+  fi
+  echo "$bad product check(s) failed (see [FAIL] above)."
+  exit 1
+fi
 
 # docker daemon
 if docker info >/dev/null 2>&1; then
@@ -21,10 +86,7 @@ else
   fail "docker daemon not running — start Docker"
 fi
 
-# python
-if command -v python3 >/dev/null 2>&1; then pass "python3 ($(python3 -V 2>&1))"; else fail "python3 missing"; fi
-
-# the model the assistant is configured to use
+# the model the assistant is configured to use (honors OLLAMA_HOST / OLLAMA_MODEL)
 model="$(python3 - "$here" <<'PY' 2>/dev/null || echo "qwen3.5:9b"
 import sys
 sys.path.insert(0, sys.argv[1] + "/assistant")
@@ -32,17 +94,28 @@ import config
 print(config.load_config(sys.argv[1] + "/assistant/config.json")["model"])
 PY
 )"
+ollama_url="$(python3 - "$here" <<'PY' 2>/dev/null || echo "http://127.0.0.1:11434"
+import sys
+sys.path.insert(0, sys.argv[1] + "/assistant")
+import config
+print(config.load_config(sys.argv[1] + "/assistant/config.json")["ollama_url"])
+PY
+)"
 
-# ollama reachable + model pulled
+# ollama reachable + model pulled (configured URL, with Bearer if a key is set)
 _ollama_tmp="$(mktemp)"
-if curl -fsS http://127.0.0.1:11434/api/tags -o "$_ollama_tmp" 2>/dev/null; then
-  pass "ollama reachable (:11434)"
+_curl_auth=()
+if [ -n "${SOVEREIGN_HOME_OLLAMA_API_KEY:-}" ]; then
+  _curl_auth=(-H "Authorization: Bearer ${SOVEREIGN_HOME_OLLAMA_API_KEY}")
+elif [ -n "${OLLAMA_API_KEY:-}" ]; then
+  _curl_auth=(-H "Authorization: Bearer ${OLLAMA_API_KEY}")
+fi
+if curl -fsS "${_curl_auth[@]}" "${ollama_url%/}/api/tags" -o "$_ollama_tmp" 2>/dev/null; then
+  pass "ollama reachable ($ollama_url)"
   if python3 - "$model" "$_ollama_tmp" <<'PY' 2>/dev/null
 import json, sys
 want = sys.argv[1]
 tmpf = sys.argv[2]
-# Match the EXACT configured model, tag and all. Ollama reports "qwen3.5:9b";
-# a default ":latest" config is matched against "<name>:latest" or a bare "<name>".
 names = {m.get("name", "") for m in json.load(open(tmpf)).get("models", [])}
 bare = {n.split(":")[0] for n in names}
 ok = want in names or (":" not in want and want in bare)
@@ -54,7 +127,7 @@ PY
     fail "model '$model' not pulled — run: ollama pull $model"
   fi
 else
-  fail "ollama not reachable on :11434 — run: ollama serve"
+  fail "ollama not reachable at $ollama_url — run: ollama serve (or set OLLAMA_HOST + OLLAMA_API_KEY)"
 fi
 rm -f "$_ollama_tmp"
 
