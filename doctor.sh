@@ -14,7 +14,7 @@ for a in "$@"; do
     -h|--help)
       echo "Usage: ./doctor.sh [--offline]"
       echo "  (default) probe live Docker / Ollama / Frigate / optional Telegram"
-      echo "  --offline  product logic only (tests, compile, scripts, templates)"
+      echo "  --offline  product logic only (compile, scripts, templates)"
       exit 0
       ;;
     *)
