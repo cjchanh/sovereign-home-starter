@@ -4,22 +4,26 @@
 #
 #   ./doctor.sh
 #   ./doctor.sh --offline
+#   ./doctor.sh --no-nvr
 set -uo pipefail   # deliberately NOT -e: run every check and report, don't abort early
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 offline=0
+no_nvr=0
 for a in "$@"; do
   case "$a" in
     --offline) offline=1 ;;
+    --no-nvr) no_nvr=1 ;;
     -h|--help)
-      echo "Usage: ./doctor.sh [--offline]"
+      echo "Usage: ./doctor.sh [--offline] [--no-nvr]"
       echo "  (default) probe live Docker / Ollama / Frigate / optional Telegram"
       echo "  --offline  product logic only (compile, scripts, templates)"
+      echo "  --no-nvr   live Ollama required; Docker/Frigate are env notes"
       exit 0
       ;;
     *)
       echo "unknown argument: $a" >&2
-      echo "Usage: ./doctor.sh [--offline]" >&2
+      echo "Usage: ./doctor.sh [--offline] [--no-nvr]" >&2
       exit 2
       ;;
   esac
@@ -34,6 +38,8 @@ envnote() { echo "  [env]  $1"; env_notes=$((env_notes + 1)); }
 
 if [ "$offline" -eq 1 ]; then
   echo "== sovereign-home doctor (offline) =="
+elif [ "$no_nvr" -eq 1 ]; then
+  echo "== sovereign-home doctor (no-nvr) =="
 else
   echo "== sovereign-home doctor =="
 fi
@@ -82,6 +88,8 @@ fi
 # docker daemon
 if docker info >/dev/null 2>&1; then
   pass "docker daemon running"
+elif [ "$no_nvr" -eq 1 ]; then
+  envnote "docker daemon not running — skipped (--no-nvr)"
 else
   fail "docker daemon not running — start Docker"
 fi
@@ -137,6 +145,8 @@ warn "vision model qwen3-vl:8b requires Ollama >= 0.12.7 — run 'ollama --versi
 # 127.0.0.1 only, but localhost can resolve to ::1 (IPv6) first -> false FAIL.
 if curl -fsS http://127.0.0.1:5000/api/version -o /dev/null 2>/dev/null; then
   pass "frigate up (:5000)"
+elif [ "$no_nvr" -eq 1 ]; then
+  envnote "frigate not reachable on :5000 — skipped (--no-nvr)"
 else
   fail "frigate not reachable on :5000 — docker compose up -d frigate"
 fi

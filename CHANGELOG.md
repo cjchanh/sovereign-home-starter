@@ -16,6 +16,8 @@ Cloud-VM / remote-Ollama boot without pretending the home NVR is up.
 - Live `./doctor.sh` probes the *configured* Ollama URL (not only
   `127.0.0.1:11434`) and passes a Bearer header when a key is set.
 - CI runs `./doctor.sh --offline`.
+- `./doctor.sh --no-nvr` requires live Ollama and treats Docker/Frigate as
+  environment notes (Cloud VM assistant path).
 - Privacy: `alerts.vision_caption` stays opt-in and off. Pointing `ollama_url`
   at a remote host and enabling vision sends snapshots to that host.
 

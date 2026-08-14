@@ -19,6 +19,7 @@ class DoctorTests(unittest.TestCase):
         )
         self.assertEqual(cp.returncode, 0, cp.stderr)
         self.assertIn("--offline", cp.stdout)
+        self.assertIn("--no-nvr", cp.stdout)
 
     def test_unknown_flag_exits_2(self):
         cp = subprocess.run(

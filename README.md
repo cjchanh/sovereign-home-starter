@@ -99,6 +99,8 @@ the private Compose network.
 - `./doctor.sh --offline` — product logic only (compile, scripts, templates).
   Missing Docker / Ollama / Frigate is an environment note, not a product
   failure. This is the Cloud VM / CI path. Run the unittest suite separately.
+- `./doctor.sh --no-nvr` — live Ollama (configured URL + model) required.
+  Docker / Frigate are environment notes. This is the Cloud VM assistant path.
 - `./doctor.sh` — pokes your **live** services (Ollama + model, Frigate, Tailscale,
   and a real Telegram test message) and tells you exactly what's wired and what isn't.
   Ollama is the configured URL (`OLLAMA_HOST` or `assistant/config.json`), not only
