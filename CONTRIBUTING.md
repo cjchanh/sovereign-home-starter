@@ -24,8 +24,9 @@ for s in $(find . -name '*.sh'); do bash -n "$s"; done
 docker compose config
 ```
 
-`./doctor.sh` checks live services on your box. It is useful before release, but
-it is not required for every doc-only pull request.
+`./doctor.sh --offline` is required with the unittest suite (CI runs it).
+`./doctor.sh` (no flag) checks live services on your box and is useful before
+release, but it is not required for every doc-only pull request.
 
 ## Pull requests
 

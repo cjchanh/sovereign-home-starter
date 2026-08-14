@@ -4,7 +4,12 @@ A small chat assistant backed by a **local** model (Ollama). It remembers what y
 tell it (a local JSONL file — nothing leaves the box) and can assemble a **sitrep**:
 system health + recent camera events + your todos, summarized by the local model.
 
-No third-party Python packages — just **Python 3.10+** and a running Ollama.
+No third-party Python packages — just **Python 3.10+** and a reachable Ollama
+(local `ollama serve`, or `OLLAMA_HOST` + `OLLAMA_API_KEY` for ollama.com).
+`SOVEREIGN_HOME_OLLAMA_URL` still wins over `OLLAMA_HOST`.
+
+If you point `ollama_url` at a remote host and enable `alerts.vision_caption`,
+snapshots leave this box. Vision captioning stays **opt-in and off** by default.
 
 ## Run
 ```bash

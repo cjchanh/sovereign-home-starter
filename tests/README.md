@@ -10,5 +10,6 @@ python3 -m unittest discover -s tests
 python3 tests/test_assistant.py
 ```
 
-These check the code. To check your **live services** (Ollama, Frigate, Tailscale,
+These check the code. `./doctor.sh --offline` is the same idea plus compile /
+template presence. To check your **live services** (Ollama, Frigate, Tailscale,
 Telegram), run `./doctor.sh` from the repo root.

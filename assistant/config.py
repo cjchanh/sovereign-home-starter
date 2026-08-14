@@ -37,15 +37,17 @@ DEFAULT_CONFIG: dict = {
 
 def _apply_env_overrides(cfg: dict) -> dict:
     """Apply container-friendly overrides without making config files secret-bearing."""
-    model = os.environ.get("SOVEREIGN_HOME_MODEL")
-    ollama_url = os.environ.get("SOVEREIGN_HOME_OLLAMA_URL")
+    model = os.environ.get("SOVEREIGN_HOME_MODEL") or os.environ.get("OLLAMA_MODEL")
+    ollama_url = os.environ.get("SOVEREIGN_HOME_OLLAMA_URL") or os.environ.get(
+        "OLLAMA_HOST"
+    )
     memory_path = os.environ.get("SOVEREIGN_HOME_MEMORY_PATH")
     nvr_url = os.environ.get("SOVEREIGN_HOME_NVR_URL")
 
     if model:
         cfg["model"] = model
     if ollama_url:
-        cfg["ollama_url"] = ollama_url
+        cfg["ollama_url"] = ollama_url.rstrip("/")
     if memory_path:
         cfg["memory_path"] = memory_path
     if nvr_url:
