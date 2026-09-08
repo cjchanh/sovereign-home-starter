@@ -22,6 +22,10 @@ work over your tailnet without it.
 4. **Tailscale wiring** — reach the assistant and cameras from anywhere, **privately**
    (tailnet-only, never public).
 
+**Install:** `git clone https://github.com/cjchanh/sovereign-home-starter.git && cd sovereign-home-starter && ./setup.sh`
+
+**Refuses:** public-internet exposure (no Tailscale funnel, no binding services off localhost/tailnet) and committing secrets (`.env`, camera credentials, Telegram tokens stay gitignored).
+
 Plus a **box-hardening checklist**, a **backup-to-your-Pi** script, and optional
 **mildoc-lint** for compliance docs.
 

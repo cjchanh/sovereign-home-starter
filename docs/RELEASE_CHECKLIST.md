@@ -20,7 +20,7 @@ Optional live check on the target box:
 
 ## Boundary steps
 
-These are operator-gated. Do not run them without an explicit commit/release
+These are maintainer-gated. Do not run them without an explicit commit/release
 authorization.
 
 ```bash
