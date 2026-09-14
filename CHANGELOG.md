@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.1.2
+
+Cloud-VM / remote-Ollama boot without pretending the home NVR is up.
+
+- Assistant `llm.py` / `vision.py` send `Authorization: Bearer` when
+  `OLLAMA_API_KEY` or `SOVEREIGN_HOME_OLLAMA_API_KEY` is set (ollama.com or a
+  protected tunnel). Local loopback with no key is unchanged.
+- `OLLAMA_HOST` / `OLLAMA_MODEL` override config the same way
+  `SOVEREIGN_HOME_OLLAMA_URL` / `SOVEREIGN_HOME_MODEL` already did. The
+  sovereign-prefixed names still win.
+- `./doctor.sh --offline` grades compile + scripts + templates and does **not**
+  fail on missing Docker / Ollama / Frigate. Those stay live-only. Unittests
+  stay a separate command (CI runs both).
+- Live `./doctor.sh` probes the *configured* Ollama URL (not only
+  `127.0.0.1:11434`) and passes a Bearer header when a key is set.
+- CI runs `./doctor.sh --offline`.
+- `./doctor.sh --no-nvr` requires live Ollama and treats Docker/Frigate as
+  environment notes (Cloud VM assistant path).
+- Privacy: `alerts.vision_caption` stays opt-in and off. Pointing `ollama_url`
+  at a remote host and enabling vision sends snapshots to that host.
+
 ## v0.1.1
 
 Convergence/packaging release.

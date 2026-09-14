@@ -37,7 +37,7 @@ You (the agent) are helping the owner stand this up. Be concrete and hands-on.
 - `security/` — read-only hardening audit that scores docs/HARDENING.md
 - `reticulum/` — optional sovereign mesh (Reticulum/RNS) node starter
 - `tests/` — offline smoke tests (`python3 -m unittest discover -s tests`)
-- `doctor.sh` — health check that pokes the live services (Ollama/Frigate/Tailscale/Telegram)
+- `doctor.sh` — live health check (Ollama/Frigate/Tailscale/Telegram). `./doctor.sh --offline` grades product logic only.
 - `lint/` — optional: compliance-doc linting with mildoc-lint
 
 Keep it simple. This is one person's private home stack, not a production fleet.
