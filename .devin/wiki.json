@@ -1,0 +1,58 @@
+{
+  "repo_notes": [
+    {
+      "content": "sovereign-home-starter is a local-first, private, zero-subscription home stack you stand up on one Linux box: (1) a private AI assistant on Ollama with memory plus a two-way Telegram bot, (2) a daily sitrep pushed to your phone, (3) a Frigate NVR doing on-device person/vehicle detection on RTSP cameras (Tapo, Reolink) with Telegram alerts + snapshots, and (4) Tailscale wiring for tailnet-only remote access. Design laws, restated in CLAUDE.md: nothing phones home or needs a subscription; never expose services to the public internet (tailscale serve only, never funnel; ports bound to localhost/tailnet); never commit secrets (.env, assistant/config.json, nvr/config/config.yml are gitignored); don't run destructive commands without explaining. Telegram is the single opt-in external dependency.",
+      "author": "Devin"
+    },
+    {
+      "content": "Layout: assistant/ is the Python service layer (assistant.py chat loop, telegram_bot.py two-way bot, sitrep.py daily brief, alert_watcher.py camera-event alerts, notify.py, memory.py JSONL memory, llm.py Ollama client, frigate.py NVR API client, vision.py, config.py + config.example.json, Dockerfile, telegram-bot.service.example). nvr/ holds Frigate config (config.example.yml, check-camera.sh RTSP probe, TUNING.md zones/masks/detectors). tailscale/setup.sh wires tailnet access. backup/backup.sh rsyncs to a Pi. security/audit.sh is a read-only hardening audit scoring docs/HARDENING.md. reticulum/ is an optional RNS mesh-node starter (setup.sh, rnsd.service.example). lint/ documents optional mildoc-lint. doctor.sh pokes live services; setup.sh seeds configs. docker-compose.yml runs frigate + assistant + telegram-bot services (assistant/telegram-bot behind profiles, Frigate ports loopback-only). tests/ has offline unittest smoke tests. Prioritize assistant/ and the ops scripts; each subdirectory has its own README.",
+      "author": "Devin"
+    },
+    {
+      "content": "Vocabulary: sitrep (daily health+camera+todos brief), tailnet, Frigate NVR, RTSP, alert cooldown (default 120s), nvr_api_key proxy auth, memory.jsonl append-only memory, Reticulum/RNS mesh. First-class sources: README.md (the four pieces + install), CLAUDE.md (agent setup-order walkthrough + ground rules), assistant/README.md, nvr/TUNING.md, docs/HARDENING.md, docs/RELEASE_CHECKLIST.md, SECURITY.md, CONTRIBUTING.md, CHANGELOG.md, tests/README.md, .github/workflows/ci.yml.",
+      "author": "Devin"
+    }
+  ],
+  "pages": [
+    {
+      "title": "Overview",
+      "purpose": "What the starter is: the four-piece local-first home stack (assistant, sitrep, Frigate NVR, Tailscale) on one Linux box, the architecture diagram from README.md, and the sovereignty laws (no public exposure, no committed secrets, Telegram as the only opt-in external).",
+      "parent": null
+    },
+    {
+      "title": "Getting Started",
+      "purpose": "Prereqs (Docker, Python 3.10+, Ollama, Tailscale, RTSP cameras), ./setup.sh, filling .env and nvr/config/config.yml, docker compose up -d frigate, ollama pull qwen3.5:9b, python3 assistant/assistant.py, ./tailscale/setup.sh, and the compose profile layout (assistant, telegram-bot).",
+      "parent": "Overview"
+    },
+    {
+      "title": "Assistant Service",
+      "purpose": "assistant/: assistant.py chat loop, telegram_bot.py two-way bot + telegram-bot.service.example, memory.py JSONL memory store, llm.py Ollama client, config.py/config.example.json, Dockerfile and the compose service definitions, and how SOVEREIGN_HOME_* env vars wire Ollama/NVR/memory paths.",
+      "parent": null
+    },
+    {
+      "title": "Sitrep, Notify, and Alerts",
+      "purpose": "assistant/sitrep.py daily brief (system health + camera events + todos summarized by the local model, --notify push), notify.py delivery, alert_watcher.py camera alerts with snapshots and per-camera cooldown, cron wiring from assistant/README.md.",
+      "parent": null
+    },
+    {
+      "title": "NVR and Camera Detection",
+      "purpose": "nvr/: Frigate service in docker-compose.yml (image, shm_size, /config + /media/frigate volumes, loopback ports 8971/5000/8554/8555), config.example.yml camera/object config, check-camera.sh RTSP probing, TUNING.md zones/masks/detectors, and frigate.py + vision.py in the assistant layer.",
+      "parent": null
+    },
+    {
+      "title": "Networking and Remote Access",
+      "purpose": "tailscale/setup.sh tailnet wiring and the serve-vs-funnel rule; reticulum/ optional RNS mesh node (setup.sh, config.example, rnsd.service.example); how remote access stays private.",
+      "parent": null
+    },
+    {
+      "title": "Backup, Hardening, and Ops",
+      "purpose": "backup/backup.sh rsync-to-Pi, security/audit.sh read-only audit scoring docs/HARDENING.md, doctor.sh live-service health checks (Ollama/Frigate/Tailscale/Telegram), lint/ mildoc-lint docs, docs/RELEASE_CHECKLIST.md.",
+      "parent": null
+    },
+    {
+      "title": "Testing and CI",
+      "purpose": "tests/ offline unittest smoke tests (test_assistant.py; python3 -m unittest discover -s tests per tests/README.md) and .github/workflows/ci.yml.",
+      "parent": null
+    }
+  ]
+}
